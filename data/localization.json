@@ -1,0 +1,64 @@
+{
+  "en": {
+    "navigation": {
+      "search": "Search news...",
+      "allCategories": "All Categories",
+      "language": "Language",
+      "theme": "Theme"
+    },
+    "categories": {
+      "hot-topic": "Hot Topic: Gen Z Protest",
+      "corruption": "Corruption",
+      "sports": "Sports",
+      "share-market": "Share Market",
+      "technology": "Technology",
+      "tourism": "Tourism",
+      "education": "Education",
+      "entertainment": "Entertainment",
+      "health": "Health",
+      "climate-change": "Climate Change"
+    },
+    "common": {
+      "readMore": "Read More",
+      "noResults": "No news found matching your search.",
+      "loading": "Loading...",
+      "publishedOn": "Published on"
+    },
+    "footer": {
+      "madeBy": "Made by",
+      "company": "AstaVision Infosys",
+      "allRightsReserved": "All rights reserved."
+    }
+  },
+  "np": {
+    "navigation": {
+      "search": "समाचार खोज्नुहोस्...",
+      "allCategories": "सबै श्रेणीहरू",
+      "language": "भाषा",
+      "theme": "थिम"
+    },
+    "categories": {
+      "hot-topic": "तातो विषय: जेन जी आन्दोलन",
+      "corruption": "भ्रष्टाचार",
+      "sports": "खेलकुद",
+      "share-market": "शेयर बजार",
+      "technology": "प्रविधि",
+      "tourism": "पर्यटन",
+      "education": "शिक्षा",
+      "entertainment": "मनोरञ्जन",
+      "health": "स्वास्थ्य",
+      "climate-change": "जलवायु परिवर्तन"
+    },
+    "common": {
+      "readMore": "थप पढ्नुहोस्",
+      "noResults": "तपाईंको खोजसँग मिल्ने कुनै समाचार फेला परेन।",
+      "loading": "लोड हुँदै...",
+      "publishedOn": "प्रकाशित मिति"
+    },
+    "footer": {
+      "madeBy": "निर्माता",
+      "company": "अस्तभिजन इन्फोसिस",
+      "allRightsReserved": "सबै अधिकार सुरक्षित।"
+    }
+  }
+}
