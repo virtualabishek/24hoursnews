@@ -8,15 +8,8 @@
     },
     "categories": {
       "hot-topic": "Hot Topic: Gen Z Protest",
-      "corruption": "Corruption",
-      "sports": "Sports",
-      "share-market": "Share Market",
-      "technology": "Technology",
-      "tourism": "Tourism",
-      "education": "Education",
-      "entertainment": "Entertainment",
-      "health": "Health",
-      "climate-change": "Climate Change"
+      "international": "International",
+      "technology": "Technology"
     },
     "common": {
       "readMore": "Read More",
@@ -39,15 +32,8 @@
     },
     "categories": {
       "hot-topic": "तातो विषय: जेन जी आन्दोलन",
-      "corruption": "भ्रष्टाचार",
-      "sports": "खेलकुद",
-      "share-market": "शेयर बजार",
-      "technology": "प्रविधि",
-      "tourism": "पर्यटन",
-      "education": "शिक्षा",
-      "entertainment": "मनोरञ्जन",
-      "health": "स्वास्थ्य",
-      "climate-change": "जलवायु परिवर्तन"
+      "international": "अन्तर्राष्ट्रिय",
+      "technology": "प्रविधि"
     },
     "common": {
       "readMore": "थप पढ्नुहोस्",
