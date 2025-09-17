@@ -18,7 +18,11 @@ export interface NewsArticle {
   publisher: string;
 }
 
-export type TopicKey = "gen-protest" | "international" | "technology";
+export type TopicKey =
+  | "gen-protest"
+  | "international"
+  | "technology"
+  | "share-market";
 
 interface Localization {
   navigation: {
@@ -32,6 +36,7 @@ interface Localization {
     international: string;
     technology: string;
     information: string;
+    "share-market": string;
   };
   common: {
     readMore: string;
@@ -60,6 +65,7 @@ export function getLocalization(language: Language = "en"): Localization {
         international: "Internation",
         technology: "Technology",
         information: "Information",
+        "share-market": "Share Market",
       },
       common: {
         readMore: "Read More",

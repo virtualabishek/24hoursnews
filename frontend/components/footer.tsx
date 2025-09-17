@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useLanguage } from "@/contexts/language-context"
+import { useLanguage } from "@/contexts/language-context";
 
 export function Footer() {
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
   return (
     <footer className="bg-card border-t border-border mt-16">
@@ -20,9 +20,11 @@ export function Footer() {
               {t("footer.company")}
             </a>
           </div>
-          <div className="text-sm text-muted-foreground">© 2025 Nepal News Hub. {t("footer.allRightsReserved")}</div>
+          <div className="text-sm text-muted-foreground">
+            © 2025 24 Hours News. {t("footer.allRightsReserved")}
+          </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

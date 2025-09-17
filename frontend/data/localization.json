@@ -9,7 +9,9 @@
     "categories": {
       "hot-topic": "Hot Topic: Gen Z Protest",
       "international": "International",
-      "technology": "Technology"
+      "technology": "Technology",
+      "share-market": "Share Market",
+      "business-economy": "Business & Economy"
     },
     "common": {
       "readMore": "Read More",
@@ -33,7 +35,8 @@
     "categories": {
       "hot-topic": "तातो विषय: जेन जी आन्दोलन",
       "international": "अन्तर्राष्ट्रिय",
-      "technology": "प्रविधि"
+      "technology": "प्रविधि",
+      "share-market": "शेयर बजार"
     },
     "common": {
       "readMore": "थप पढ्नुहोस्",
