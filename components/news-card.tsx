@@ -21,14 +21,15 @@ export function NewsCard({ article }: NewsCardProps) {
 
   const formatDate = (dateStr: string) => {
     if (language === "np") {
-      return article.dateNepali
+      return `${article.dateNepali} • ${article.timeNepali}`
     }
     const date = new Date(dateStr)
-    return date.toLocaleDateString("en-US", {
+    const formattedDate = date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     })
+    return `${formattedDate} • ${article.timeEnglish}`
   }
 
   return (

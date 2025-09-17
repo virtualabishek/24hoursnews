@@ -14,7 +14,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Nepal News Hub - Latest News in English & Nepali",
+  title: "24 Hours News - Latest News in English & Nepali",
   description:
     "Stay updated with the latest news from Nepal in both English and Nepali languages. Breaking news, politics, sports, technology, and more.",
   generator: "v0.app",
@@ -32,8 +32,9 @@ export default function RootLayout({
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
-            enableSystem
+            enableSystem={false}
             disableTransitionOnChange={false}
+            storageKey="theme"
           >
             {children}
           </ThemeProvider>
