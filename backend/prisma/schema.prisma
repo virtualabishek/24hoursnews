@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model News {
+  id                String    @id @default(cuid())
+  
+  nepaliTitle       String         
+  nepaliDescription String          @db.Text 
+  imageUrl          String?       
+  url               String          @unique 
+  englishTitle      String?
+  englishDescription String?        @db.Text
+  category          Category
+  publisher         Publisher @relation(fields: [publisherId], references: [id])
+  publisherId       String
+  isTrending        Boolean   @default(false) 
+  publishedAt       DateTime?
+  scrapedAt         DateTime  @default(now()) 
+}
+
+model Publisher {
+  id          String @id @default(cuid())
+  name        String @unique    
+  news        News[]
+}
+
+
+
+enum Category {
+  BUSINESS
+  ENTERTAINMENT
+  SPORTS
+  HEALTH
+  EDUCATION
+  TECHNOLOGY
+  INTERNATIONAL
+  MERO_SHARE
+  GENERAL 
+  TRENDING
+}
