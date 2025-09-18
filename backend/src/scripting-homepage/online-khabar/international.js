@@ -3,18 +3,24 @@ import { JSDOM } from "jsdom";
 
 async function scrapeEntertainmentNews() {
   try {
-    const response = await axios.get("https://www.onlinekhabar.com/lifestyle", {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
-    });
+    const response = await axios.get(
+      "https://www.onlinekhabar.com/content/international",
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+      }
+    );
+
     const dom = new JSDOM(response.data);
     const doc = dom.window.document;
+
     const newsItems = doc.querySelectorAll(
       ".ok-col-left .ok-grid-12 .ok-news-post"
     );
     const newsData = [];
+
     for (let i = 0; i < Math.min(6, newsItems.length); i++) {
       const item = newsItems[i];
       const imageElement = item.querySelector(

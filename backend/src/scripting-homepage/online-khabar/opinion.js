@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 
 async function scrapeEntertainmentNews() {
   try {
-    const response = await axios.get("https://www.onlinekhabar.com/lifestyle", {
+    const response = await axios.get("https://www.onlinekhabar.com/opinion", {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",

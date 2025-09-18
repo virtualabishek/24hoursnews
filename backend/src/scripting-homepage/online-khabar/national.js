@@ -3,7 +3,6 @@ import { JSDOM } from "jsdom";
 
 async function scrapeEntertainmentNews() {
   try {
-    // Fetch the webpage content
     const response = await axios.get(
       "https://www.onlinekhabar.com/content/news/rastiya",
       {
@@ -17,13 +16,11 @@ async function scrapeEntertainmentNews() {
     const dom = new JSDOM(response.data);
     const doc = dom.window.document;
 
-    // Select all news items within the 'ok-col-left' div
     const newsItems = doc.querySelectorAll(
       ".ok-col-left .ok-grid-12 .ok-news-post"
     );
     const newsData = [];
 
-    // Loop through the first 6 items
     for (let i = 0; i < Math.min(6, newsItems.length); i++) {
       const item = newsItems[i];
       const imageElement = item.querySelector(
@@ -51,5 +48,4 @@ async function scrapeEntertainmentNews() {
   }
 }
 
-// Run the scraper
 scrapeEntertainmentNews();

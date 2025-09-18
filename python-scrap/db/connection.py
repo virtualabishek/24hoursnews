@@ -8,10 +8,8 @@ def connect_to_db():
             password="navin123",
             database="abishek_newsdb"
         )
-
         if connection.is_connected():
             print("Connected to MySQL database")
-
         return connection
 
     except mysql.connector.Error as err:

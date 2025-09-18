@@ -1,10 +1,11 @@
 import axios from "axios";
 import { JSDOM } from "jsdom";
 
-async function scrapeEntertainmentNews() {
+async function scrapeLimitedNews() {
   try {
+    // Fetch the webpage content
     const response = await axios.get(
-      "https://www.onlinekhabar.com/entertainment",
+      "https://narayanionline.com/category/चितवन-विशेष/",
       {
         headers: {
           "User-Agent":
@@ -16,24 +17,19 @@ async function scrapeEntertainmentNews() {
     const dom = new JSDOM(response.data);
     const doc = dom.window.document;
 
-    const newsItems = doc.querySelectorAll(
-      ".ok-col-left .ok-grid-12 .ok-news-post"
-    );
+    // Select all news items
+    const newsItems = doc.querySelectorAll(".no-list-grid-view-item");
     const newsData = [];
 
-    for (let i = 0; i < Math.min(6, newsItems.length); i++) {
+    // Loop through the first 10 items
+    for (let i = 0; i < Math.min(10, newsItems.length); i++) {
       const item = newsItems[i];
-      const imageElement = item.querySelector(
-        ".post-img-wrap img, .ok-post-thumb"
-      );
-      const titleElement = item.querySelector(
-        ".post-title-wrap h4 a, .ok-post-content-wrap h2"
-      );
-      const linkElement = item.querySelector("a");
+      const imageElement = item.querySelector(".no-news-img-link img");
+      const titleElement = item.querySelector(".no-list-grid-view-info h4 a");
 
       const newsItem = {
         title: titleElement ? titleElement.textContent.trim() : "No title",
-        link: linkElement ? linkElement.getAttribute("href") : "No link",
+        link: titleElement ? titleElement.getAttribute("href") : "No link",
         image: imageElement ? imageElement.getAttribute("src") : "No image",
       };
 
@@ -48,4 +44,5 @@ async function scrapeEntertainmentNews() {
   }
 }
 
-scrapeEntertainmentNews();
+// Run the scraper
+scrapeLimitedNews();

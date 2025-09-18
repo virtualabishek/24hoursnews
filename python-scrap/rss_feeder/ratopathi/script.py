@@ -11,7 +11,7 @@ def extract_image_url(article_url):
     try:
         # Send a GET request to the article URL
         response = requests.get(article_url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        response.raise_for_status()  # Raise an exception for HTTP errors   
 
         # Parse the HTML content of the page
         soup = BeautifulSoup(response.content, 'html.parser')
