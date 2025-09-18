@@ -1,20 +1,19 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
+
 }
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 
 model News {
   id                String    @id @default(cuid())
-  
   nepaliTitle       String         
   nepaliDescription String          @db.Text 
   imageUrl          String?       
@@ -32,6 +31,7 @@ model News {
 model Publisher {
   id          String @id @default(cuid())
   name        String @unique    
+  logoUrl     String? 
   news        News[]
 }
 
