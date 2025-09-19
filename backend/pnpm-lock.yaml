@@ -35,6 +35,9 @@ importers:
       nepali-date-converter:
         specifier: ^3.4.0
         version: 3.4.0
+      nepali-datetime:
+        specifier: ^1.4.1
+        version: 1.4.1
       node-cron:
         specifier: ^4.2.1
         version: 4.2.1
@@ -1093,6 +1096,10 @@ packages:
   nepali-date-converter@3.4.0:
     resolution: {integrity: sha512-hBojNXCQN69I533CnxNubl72uNx2Zcow9t2bOML3CxXv227s7NKA2kStUGO5xysg0SwsubTTxAO6tcg9IhS61w==}
     engines: {node: '>=6.0.0'}
+
+  nepali-datetime@1.4.1:
+    resolution: {integrity: sha512-G+c83fPgBlzTarta6PHGDWYp6ck6IAjsbXDR7iviqHrcnpGoIYwy2qd90UsKT4cd8l7cEP6B9YwOwShHGyfbWQ==}
+    engines: {node: '>=18'}
 
   netmask@2.0.2:
     resolution: {integrity: sha512-dBpDMdxv9Irdq66304OLfEmQ9tbNRFnFTuZiLo+bD+r332bBmMJ8GBLXklIXXgxd3+v9+KUnZaUR5PJMa75Gsg==}
@@ -2599,6 +2606,8 @@ snapshots:
   negotiator@1.0.0: {}
 
   nepali-date-converter@3.4.0: {}
+
+  nepali-datetime@1.4.1: {}
 
   netmask@2.0.2: {}
 

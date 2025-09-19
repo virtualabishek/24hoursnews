@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "test": "tsx src/test.js",
     "build": "tsc",
     "start": "node dist/server.js",
     "run-scrap": "pnpm tsx src/run-now.ts"
@@ -24,6 +25,7 @@
     "express": "^5.1.0",
     "jsdom": "^27.0.0",
     "nepali-date-converter": "^3.4.0",
+    "nepali-datetime": "^1.4.1",
     "node-cron": "^4.2.1",
     "puppeteer": "^24.22.0"
   },

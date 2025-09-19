@@ -1,6 +1,5 @@
-import { PrismaClient } from "../generated/prisma/index.js";
-import { Category } from "../generated/prisma/index.js";
-import { OnlineKhabarScraper } from "../scrappers/online-khabar.scrapper.js";
+import { PrismaClient, Category } from "../generated/prisma/index.js";
+import { OnlineKhabarScraper } from "../scrappers/online-khabar.js";
 import { parseOnlineKhabarDate } from "../utils/dateConverter.js";
 
 const prisma = new PrismaClient();
@@ -49,45 +48,78 @@ export class ScrapingService {
       where: { name: "Online Khabar" },
     });
     if (!publisher) {
-      console.error(
-        'Publisher "Online Khabar" not found. Please seed the database.'
-      );
+      console.error('Publisher "Online Khabar" not found.');
       return;
     }
 
     for (const target of targets) {
       console.log(`Scraping category: ${target.category}`);
       const rawArticles = await scraper.scrapeCategory(target.url);
+      console.log(`Raw articles for ${target.category}:`, rawArticles);
 
-      for (const article of rawArticles) {
-        const existingNews = await prisma.news.findUnique({
-          where: { url: article.link },
-        });
-        if (existingNews) {
-          console.log(`Skipping existing article: ${article.title}`);
-          continue;
-        }
+      const newNewsData = rawArticles
+        .map((article) => {
+          const publishedAt = parseOnlineKhabarDate(article.nepaliDateString);
+          if (!publishedAt) {
+            console.warn(
+              `Could not parse date "${article.nepaliDateString}" for article: ${article.title}`
+            );
+            return null;
+          }
 
-        const publishedAt = parseOnlineKhabarDate(article.nepaliDateString);
-        if (!publishedAt) {
-          console.warn(`Could not parse date for article: ${article.title}`);
-          continue;
-        }
-
-        await prisma.news.create({
-          data: {
+          return {
             nepaliTitle: article.title,
             nepaliDescription: article.description,
             url: article.link,
-            imageUrl: article.image,
+            imageUrl: article.image || null,
             category: target.category,
             publisherId: publisher.id,
-            publishedAt: publishedAt,
-          },
-        });
-        console.log(`Saved article: ${article.title}`);
+            publishedAt,
+            dateEnglish: publishedAt.toISOString().split("T")[0] || null,
+            timeEnglish:
+              publishedAt.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              }) || null,
+            dateNepali: article.nepaliDateString
+              .split(" ")
+              .slice(0, 3)
+              .join(" "),
+            timeNepali: article.nepaliDateString.split(" ")[4] || null,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      console.log(
+        `Processed ${newNewsData.length} articles for ${target.category}`
+      );
+
+      if (newNewsData.length > 0) {
+        console.log(
+          `Found ${newNewsData.length} new articles for ${target.category}. Replacing old data...`
+        );
+        try {
+          await prisma.$transaction([
+            prisma.news.deleteMany({
+              where: { publisherId: publisher.id, category: target.category },
+            }),
+            prisma.news.createMany({ data: newNewsData }),
+          ]);
+          console.log(`Successfully replaced data for ${target.category}.`);
+        } catch (error) {
+          console.error(
+            `Transaction failed for category ${target.category}:`,
+            error
+          );
+        }
+      } else {
+        console.log(
+          `No new articles found for ${target.category}. Old data retained.`
+        );
       }
     }
+
     console.log("--- Online Khabar Scrape Finished ---");
   }
 }

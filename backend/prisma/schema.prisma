@@ -20,6 +20,10 @@ model News {
   url               String          @unique 
   englishTitle      String?
   englishDescription String?        @db.Text
+  dateEnglish String?
+  timeEnglish String?
+  dateNepali String?
+  timeNepali String?
   category          Category
   publisher         Publisher @relation(fields: [publisherId], references: [id])
   publisherId       String

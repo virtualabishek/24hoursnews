@@ -1,4 +1,5 @@
-import NepaliDate from "nepali-date-converter";
+import NepaliDateConverter from "nepali-date-converter";
+const NepaliDate = NepaliDateConverter;
 
 const nepaliMonthMap = {
   वैशाख: 1,
@@ -17,33 +18,51 @@ const nepaliMonthMap = {
 
 export function parseOnlineKhabarDate(dateString) {
   try {
-    const parts = dateString.trim().split(/\s+/);
-    if (parts.length < 4) {
-      console.warn(`Invalid date format: ${dateString}`);
+    if (!dateString || typeof dateString !== "string") {
+      console.warn("Invalid dateString received:", dateString);
       return null;
     }
 
-    const bsYear = parseInt(parts[0], 10);
-    const bsMonthName = parts[1];
-    const bsDay = parseInt(parts[2], 10);
-    const time = parts[4] || "00:00";
+    // Normalize spaces
+    const cleanedDateString = dateString.replace(/\s+/g, " ").trim();
+    // Match format: "YYYY Month DD गते HH:MM"
+    const regex = /^(\d{4})\s+([^\s]+)\s+(\d{1,2})\s+गते\s+(\d{2}:\d{2})$/;
+    const match = cleanedDateString.match(regex);
 
-    if (!nepaliMonthMap[bsMonthName]) {
-      console.warn(`Invalid month name: ${bsMonthName}`);
+    if (!match) {
+      console.warn(`Invalid date format (regex failed): ${dateString}`);
       return null;
     }
 
+    const [, bsYearStr, bsMonthName, bsDayStr, time] = match;
+
+    const bsYear = parseInt(bsYearStr, 10);
+    const bsDay = parseInt(bsDayStr, 10);
     const bsMonth = nepaliMonthMap[bsMonthName];
+
+    if (isNaN(bsYear) || isNaN(bsDay) || !bsMonth) {
+      console.warn(
+        `Could not parse components: Y:${bsYear}, M:${bsMonth}, D:${bsDay}`
+      );
+      return null;
+    }
+
     const nepaliDate = new NepaliDate(bsYear, bsMonth - 1, bsDay);
-    const adDate = nepaliDate.getAD();
+    const adDate = nepaliDate.toJsDate();
 
-    const [hoursStr, minutesStr] = time.split(":");
-    const hours = parseInt(hoursStr, 10) || 0;
-    const minutes = parseInt(minutesStr, 10) || 0;
+    const [hours, minutes] = time.split(":").map(Number);
+    adDate.setHours(hours || 0);
+    adDate.setMinutes(minutes || 0);
 
-    return new Date(adDate.year, adDate.month - 1, adDate.day, hours, minutes);
+    // Validate the resulting date
+    if (isNaN(adDate.getTime())) {
+      console.warn(`Invalid Gregorian date generated for: ${dateString}`);
+      return null;
+    }
+
+    return adDate;
   } catch (err) {
-    console.error(`Failed to parse date: ${dateString}`, err);
+    console.error(`Fatal error parsing date: ${dateString}`, err);
     return null;
   }
 }
