@@ -4,7 +4,10 @@
   "description": "Backend for 24 hours news developed in AstaVision Infosys",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "run-scrap": "pnpm tsx src/run-now.ts"
   },
   "type": "module",
   "keywords": [],
@@ -13,17 +16,21 @@
   "packageManager": "pnpm@10.16.1",
   "dependencies": {
     "@prisma/client": "^6.16.2",
+    "@types/node-cron": "^3.0.11",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "jsdom": "^27.0.0",
+    "nepali-date-converter": "^3.4.0",
+    "node-cron": "^4.2.1",
     "puppeteer": "^24.22.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^24.5.1",
     "prisma": "^6.16.2",
     "ts-node": "^10.9.2",

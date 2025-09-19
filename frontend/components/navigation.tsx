@@ -146,7 +146,7 @@ export function Navigation({
                   variant="outline"
                   className="min-w-[140px] justify-between bg-transparent hover:bg-muted/50 transition-colors duration-300"
                 >
-                  <span className="truncate">
+                  <span className="truncate"> 
                     {selectedCategory === "all"
                       ? t("navigation.allCategories")
                       : getTopicName(selectedCategory as TopicKey, language)}
