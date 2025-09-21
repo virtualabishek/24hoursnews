@@ -3,5 +3,6 @@ export interface RawScrapedArticle {
   link: string;
   image: string;
   description: string;
+  sharedTime?: string;
   nepaliDateString: string;
 }

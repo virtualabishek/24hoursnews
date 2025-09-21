@@ -24,6 +24,7 @@ model News {
   timeEnglish String?
   dateNepali String?
   timeNepali String?
+  sharedTime String?
   category          Category
   publisher         Publisher @relation(fields: [publisherId], references: [id])
   publisherId       String

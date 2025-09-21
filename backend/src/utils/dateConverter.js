@@ -1,5 +1,6 @@
 import NepaliDateConverter from "nepali-date-converter";
-const NepaliDate = NepaliDateConverter;
+
+const NepaliDate = NepaliDateConverter.default || NepaliDateConverter;
 
 const nepaliMonthMap = {
   वैशाख: 1,
@@ -16,6 +17,13 @@ const nepaliMonthMap = {
   चैत: 12,
 };
 
+function normalizeNepaliDigits(str) {
+  if (!str) return "";
+  return str.replace(/[\u0966-\u096F]/g, (d) =>
+    String.fromCharCode(d.charCodeAt(0) - 0x0966 + 0x30)
+  );
+}
+
 export function parseOnlineKhabarDate(dateString) {
   try {
     if (!dateString || typeof dateString !== "string") {
@@ -23,10 +31,11 @@ export function parseOnlineKhabarDate(dateString) {
       return null;
     }
 
-    // Normalize spaces
     const cleanedDateString = dateString.replace(/\s+/g, " ").trim();
-    // Match format: "YYYY Month DD गते HH:MM"
-    const regex = /^(\d{4})\s+([^\s]+)\s+(\d{1,2})\s+गते\s+(\d{2}:\d{2})$/;
+
+    // Unicode-aware regex for Devanagari/ASCII digits (with /u flag)
+    const regex =
+      /^(\p{Nd}{4})\s+([^\s]+)\s+(\p{Nd}{1,2})\s+गते\s+(\p{Nd}{2}:\p{Nd}{2})$/u;
     const match = cleanedDateString.match(regex);
 
     if (!match) {
@@ -34,11 +43,16 @@ export function parseOnlineKhabarDate(dateString) {
       return null;
     }
 
-    const [, bsYearStr, bsMonthName, bsDayStr, time] = match;
+    const [, yearStr, monthName, dayStr, timeStr] = match;
 
-    const bsYear = parseInt(bsYearStr, 10);
-    const bsDay = parseInt(bsDayStr, 10);
-    const bsMonth = nepaliMonthMap[bsMonthName];
+    // Normalize digits to ASCII for parseInt
+    const normalizedYear = normalizeNepaliDigits(yearStr);
+    const normalizedDay = normalizeNepaliDigits(dayStr);
+    const normalizedTime = normalizeNepaliDigits(timeStr);
+
+    const bsYear = parseInt(normalizedYear, 10);
+    const bsDay = parseInt(normalizedDay, 10);
+    const bsMonth = nepaliMonthMap[monthName];
 
     if (isNaN(bsYear) || isNaN(bsDay) || !bsMonth) {
       console.warn(
@@ -47,12 +61,14 @@ export function parseOnlineKhabarDate(dateString) {
       return null;
     }
 
-    const nepaliDate = new NepaliDate(bsYear, bsMonth - 1, bsDay);
+    const nepaliDate = new NepaliDate(bsYear, bsMonth, bsDay);
     const adDate = nepaliDate.toJsDate();
 
-    const [hours, minutes] = time.split(":").map(Number);
-    adDate.setHours(hours || 0);
-    adDate.setMinutes(minutes || 0);
+    // Parse time
+    const [hoursStr, minutesStr] = normalizedTime.split(":");
+    const hours = parseInt(hoursStr, 10) || 0;
+    const minutes = parseInt(minutesStr, 10) || 0;
+    adDate.setHours(hours, minutes, 0, 0);
 
     // Validate the resulting date
     if (isNaN(adDate.getTime())) {

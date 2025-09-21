@@ -9,7 +9,7 @@ export const startSchedulers = () => {
       () => {
         console.log("Running scheduled scrape job (6 AM/6 PM)...");
         const scrapingService = new ScrapingService();
-        scrapingService.runOnlineKhabarScrape().catch((error) => {
+        scrapingService.runScrape().catch((error) => {
           console.error("Scheduled scrape failed:", error);
         });
       },
