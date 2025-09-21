@@ -56,4 +56,5 @@ enum Category {
   LIFESTYLE
   NATIONAL
   OPINION
+  POLITICS
 }

@@ -14,7 +14,7 @@ export const triggerScrape = (req: Request, res: Response) => {
   res.status(202).json({ message: "Scraping process initiated." });
 
   const scrapingService = new ScrapingService();
-  scrapingService.runOnlineKhabarScrape().catch((error) => {
+  scrapingService.runScrape().catch((error) => {
     console.error("Background scrape failed:", error);
   });
 };

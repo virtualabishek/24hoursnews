@@ -1,4 +1,3 @@
-// src/scrappers/bbc.js
 import axios from "axios";
 import { JSDOM } from "jsdom";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";

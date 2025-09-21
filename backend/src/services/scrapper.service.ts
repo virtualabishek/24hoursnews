@@ -2,6 +2,7 @@
 import prisma from "../lib/prisma.js";
 import { Category, type Publisher } from "../generated/prisma/index.js";
 import { OnlineKhabarScraper } from "../scrappers/online-khabar.js";
+import { SetopatiScraper } from "../scrappers/setopati.js"; // Add this import
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
 import { parseOnlineKhabarDate } from "../utils/dateConverter.js";
 import {
@@ -9,12 +10,15 @@ import {
   adToNepaliDateString,
 } from "../utils/bbcDateConverter.js";
 import { BBCSraper } from "../scrappers/bbc-nepali.js";
+import { parseSetopatiDate } from "../utils/setoPatiConverter.js";
 
 export class ScrapingService {
   private onlineKhabarScraper = new OnlineKhabarScraper();
   private bbcScraper = new BBCSraper();
+  private setopatiScraper = new SetopatiScraper(); // Add this line
   private onlineKhabarPublisher: Publisher | null = null;
   private bbcPublisher: Publisher | null = null;
+  private setopatiPublisher: Publisher | null = null; // Add this line
 
   public async runScrape() {
     console.log("--- Starting Scraping ---");
@@ -25,6 +29,10 @@ export class ScrapingService {
     this.bbcPublisher = await prisma.publisher.findUnique({
       where: { name: "BBC Nepali" },
     });
+    this.setopatiPublisher = await prisma.publisher.findUnique({
+      // Add this block
+      where: { name: "Setopati" },
+    });
 
     if (!this.onlineKhabarPublisher) {
       console.error(
@@ -34,6 +42,12 @@ export class ScrapingService {
     if (!this.bbcPublisher) {
       console.error(
         'Publisher "BBC Nepali" not found. Please seed the database.'
+      );
+    }
+    if (!this.setopatiPublisher) {
+      // Add this block
+      console.error(
+        'Publisher "Setopati" not found. Please seed the database.'
       );
     }
 
@@ -83,43 +97,84 @@ export class ScrapingService {
       },
     ];
 
-    // Run Online Khabar
-    if (this.onlineKhabarPublisher) {
-      console.log("--- Starting Online Khabar Scrape ---");
-      const onlineKhabarPromises = onlineKhabarTargets.map((target) =>
-        this.scrapeAndProcessCategory(
-          this.onlineKhabarScraper,
-          this.onlineKhabarPublisher!,
-          parseOnlineKhabarDate,
-          target.category,
-          target.url
-        )
-      );
-      await Promise.all(onlineKhabarPromises);
-      console.log("--- Online Khabar Scrape Finished ---");
-    }
+    // Add Setopati targets (adjust categories and URLs as needed; use parseOnlineKhabarDate for dates like "आइतबार, असोज ५, २०८२")
+    const setopatiTargets = [
+      // Add this block
+      {
+        category: Category.POLITICS, // Assuming Category.POLITICS exists; otherwise use NATIONAL or appropriate
+        url: "https://www.setopati.com/politics",
+      },
+      {
+        category: Category.BUSINESS,
+        url: "https://www.setopati.com/kinmel",
+      },
+      {
+        category: Category.OPINION,
+        url: "https://www.setopati.com/opinion",
+      },
+      {
+        category: Category.SPORTS,
+        url: "https://www.setopati.com/sports",
+      },
+      {
+        category: Category.INTERNATIONAL,
+        url: "https://www.setopati.com/global",
+      },
+    ];
+
+    // // Run Online Khabar
+    // if (this.onlineKhabarPublisher) {
+    //   console.log("--- Starting Online Khabar Scrape ---");
+    //   const onlineKhabarPromises = onlineKhabarTargets.map((target) =>
+    //     this.scrapeAndProcessCategory(
+    //       this.onlineKhabarScraper,
+    //       this.onlineKhabarPublisher!,
+    //       parseOnlineKhabarDate,
+    //       target.category,
+    //       target.url
+    //     )
+    //   );
+    //   await Promise.all(onlineKhabarPromises);
+    //   console.log("--- Online Khabar Scrape Finished ---");
+    // }
 
     // Run BBC
-    if (this.bbcPublisher) {
-      console.log("--- Starting BBC Scrape ---");
-      const bbcPromises = bbcTargets.map((target) =>
+    // if (this.bbcPublisher) {
+    //   console.log("--- Starting BBC Scrape ---");
+    //   const bbcPromises = bbcTargets.map((target) =>
+    //     this.scrapeAndProcessCategory(
+    //       this.bbcScraper,
+    //       this.bbcPublisher!,
+    //       parseBBCDate,
+    //       target.category,
+    //       target.url
+    //     )
+    //   );
+    //   await Promise.all(bbcPromises);
+    //   console.log("--- BBC Scrape Finished ---");
+    // }
+
+    // Add Setopati scrape // Add this block
+    if (this.setopatiPublisher) {
+      console.log("--- Starting Setopati Scrape ---");
+      const setopatiPromises = setopatiTargets.map((target) =>
         this.scrapeAndProcessCategory(
-          this.bbcScraper,
-          this.bbcPublisher!,
-          parseBBCDate,
+          this.setopatiScraper,
+          this.setopatiPublisher!,
+          parseSetopatiDate,
           target.category,
           target.url
         )
       );
-      await Promise.all(bbcPromises);
-      console.log("--- BBC Scrape Finished ---");
+      await Promise.all(setopatiPromises);
+      console.log("--- Setopati Scrape Finished ---");
     }
 
     console.log("--- Scraping Finished ---");
   }
 
   private async scrapeAndProcessCategory(
-    scraper: OnlineKhabarScraper | BBCSraper,
+    scraper: OnlineKhabarScraper | BBCSraper | SetopatiScraper, // Add | SetopatiScraper to the union type
     publisher: Publisher,
     dateParser: (dateString: string) => Date | null,
     category: Category,
