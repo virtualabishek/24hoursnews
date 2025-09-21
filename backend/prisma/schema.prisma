@@ -13,8 +13,7 @@ datasource db {
 
 
 model News {
-  id                String    @id @default(cuid())
-  nepaliTitle       String         
+  id   Int    @id @default(autoincrement())
   nepaliDescription String          @db.Text 
   imageUrl          String?       
   url               String          @unique 

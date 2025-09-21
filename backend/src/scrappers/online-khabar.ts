@@ -1,8 +1,9 @@
 import axios from "axios";
 import { JSDOM } from "jsdom";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
+import type { IScraper } from "./scrappers.interface.js";
 
-export class OnlineKhabarScraper {
+export class OnlineKhabarScraper implements IScraper {
   public async scrapeCategory(url: string): Promise<RawScrapedArticle[]> {
     try {
       console.log(`Fetching category page: ${url}`);
