@@ -100,21 +100,3 @@ const nepaliMonthNames = [
   "फागुन",
   "चैत",
 ];
-
-export function adToNepaliDateString(adDate) {
-  try {
-    const bsDate = new NepaliDate(adDate);
-    const bsYear = bsDate.year;
-    const bsMonth = bsDate.month;
-    const bsDay = bsDate.day;
-    const monthName = nepaliMonthNames[bsMonth - 1];
-    return `${bsYear} ${monthName} ${bsDay} गते`;
-  } catch (err) {
-    console.error("Error converting AD to Nepali:", err);
-    return adDate.toLocaleDateString("ne-NP", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-}

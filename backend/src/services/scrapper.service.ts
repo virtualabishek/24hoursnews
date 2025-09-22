@@ -2,8 +2,7 @@ import type { RawScrapedArticle } from "../@types/scrapper.type.js";
 import type { Category, Publisher } from "../generated/prisma/index.js";
 import prisma from "../lib/prisma.js";
 import { SCRAPPER_JOBS } from "../scrappers/scrappers.config.js";
-import { adToNepaliDateString } from "../utils/bbcDateConverter.js";
-
+import { adToNepaliDateString } from "../utils/adToNepaliConverter.js";
 export class ScrappingService {
   public async runAllScraps() {
     console.log("=====Running the scraps:=====");
@@ -68,8 +67,9 @@ export class ScrappingService {
         }
 
         const nepaliDateFull = adToNepaliDateString(publishedAt);
-        const [dateNepaliPart] = nepaliDateFull.split(" गते");
-
+        const dateNepaliPart = nepaliDateFull
+          ? nepaliDateFull.split(" गते")[0]
+          : "अज्ञात मिति";
         return {
           nepaliTitle: article.title,
           nepaliDescription: article.description,

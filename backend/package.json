@@ -24,6 +24,7 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "jsdom": "^27.0.0",
+    "nepali-date": "^0.1.3",
     "nepali-date-converter": "^3.4.0",
     "nepali-datetime": "^1.4.1",
     "node-cron": "^4.2.1",

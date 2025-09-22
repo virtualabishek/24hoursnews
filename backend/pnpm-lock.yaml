@@ -32,6 +32,9 @@ importers:
       jsdom:
         specifier: ^27.0.0
         version: 27.0.0(postcss@8.5.6)
+      nepali-date:
+        specifier: ^0.1.3
+        version: 0.1.3
       nepali-date-converter:
         specifier: ^3.4.0
         version: 3.4.0
@@ -1096,6 +1099,10 @@ packages:
   nepali-date-converter@3.4.0:
     resolution: {integrity: sha512-hBojNXCQN69I533CnxNubl72uNx2Zcow9t2bOML3CxXv227s7NKA2kStUGO5xysg0SwsubTTxAO6tcg9IhS61w==}
     engines: {node: '>=6.0.0'}
+
+  nepali-date@0.1.3:
+    resolution: {integrity: sha512-+IO6NGSedFmQ1QmLmZvLszKvESf5kMfTtex3jKcNjJpqC/ltYduyEla25D2AyjWdY7sb+xBPLEvpGarMDXkAuw==}
+    hasBin: true
 
   nepali-datetime@1.4.1:
     resolution: {integrity: sha512-G+c83fPgBlzTarta6PHGDWYp6ck6IAjsbXDR7iviqHrcnpGoIYwy2qd90UsKT4cd8l7cEP6B9YwOwShHGyfbWQ==}
@@ -2606,6 +2613,8 @@ snapshots:
   negotiator@1.0.0: {}
 
   nepali-date-converter@3.4.0: {}
+
+  nepali-date@0.1.3: {}
 
   nepali-datetime@1.4.1: {}
 

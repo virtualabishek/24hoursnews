@@ -7,9 +7,9 @@ import {
 import { parseBBCDate } from "../utils/bbcDateConverter.js";
 import { parseOnlineKhabarDate } from "../utils/dateConverter.js";
 import { parseSetopatiDate } from "../utils/setoPatiConverter.js";
-import { BBCSraper } from "./bbc-nepali.js";
-import { OnlineKhabarScraper } from "./online-khabar.js";
-import { SetopatiScraper } from "./setopati.js";
+import { BBCSraper } from "../scripts/bbc-nepali.js";
+import { OnlineKhabarScraper } from "../scripts/online-khabar.js";
+import { SetopatiScraper } from "../scripts/setopati.js";
 
 const onlineKhabarScraper = new OnlineKhabarScraper();
 const bbcScraper = new BBCSraper();

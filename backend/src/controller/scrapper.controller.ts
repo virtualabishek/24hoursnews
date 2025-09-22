@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { ScrapingService } from "../services/scrapper.service.js";
+import { ScrappingService } from "../services/scrapper.service.js";
 
 export const triggerScrape = (req: Request, res: Response) => {
   const secretKey = req.headers["x-scrape-secret"];
@@ -13,8 +13,8 @@ export const triggerScrape = (req: Request, res: Response) => {
 
   res.status(202).json({ message: "Scraping process initiated." });
 
-  const scrapingService = new ScrapingService();
-  scrapingService.runScrape().catch((error) => {
+  const scrapingService = new ScrappingService();
+  scrapingService.runAllScraps().catch((error) => {
     console.error("Background scrape failed:", error);
   });
 };

@@ -1,4 +1,4 @@
-// src/scrappers/setopati.js
+// src/scrappers/setopati.js (updated image extraction)
 import axios from "axios";
 import { JSDOM } from "jsdom";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
@@ -62,6 +62,24 @@ export class SetopatiScraper {
         // Extract date from category page directly (textContent includes the date)
         const categoryDate = timeStampElement.textContent?.trim() || "No date";
 
+        // Extract image from category page thumbnail (prefer data-src or src, avoid placeholder)
+        let imageUrl = "No image";
+        const src = imageElement.getAttribute("src");
+        const dataSrc = imageElement.getAttribute("data-src");
+        if (
+          src &&
+          !src.includes("adsthumb") &&
+          !src.includes("rectangle.png")
+        ) {
+          imageUrl = src;
+        } else if (
+          dataSrc &&
+          !dataSrc.includes("adsthumb") &&
+          !dataSrc.includes("rectangle.png")
+        ) {
+          imageUrl = dataSrc;
+        }
+
         // Delay to avoid rate-limiting
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -75,10 +93,7 @@ export class SetopatiScraper {
         newsData.push({
           title: titleElement.textContent?.trim() || "No title",
           link: fullUrl,
-          image:
-            imageElement.getAttribute("src") ||
-            imageElement.getAttribute("data-src") ||
-            "No image",
+          image: imageUrl, // Use extracted category thumbnail
           description,
           nepaliDateString: categoryDate, // Use category date directly
         });

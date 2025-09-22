@@ -1,4 +1,3 @@
-// src/utils/setopatiDateConverter.js
 import NepaliDateConverter from "nepali-date-converter";
 const NepaliDate = NepaliDateConverter.default || NepaliDateConverter;
 
@@ -36,36 +35,40 @@ export function parseSetopatiDate(dateString) {
     // Strip prefix if present (e.g., "प्रकाशित मिति: ")
     cleaned = cleaned.replace(/^प्रकाशित मिति:\s*/, "");
 
-    // Handle time if present (e.g., "आइतबार, असोज ५, २०८२  १५:४६")
+    // Normalize Nepali digits FIRST
+    cleaned = normalizeNepaliDigits(cleaned);
+
+    // Log for debug
+    console.log(`Setopati cleaned date: "${cleaned}"`);
+
+    // Handle time if present (e.g., "  15:46")
     let timePart = "12:00"; // Default midday
-    const timeMatch = cleaned.match(/(\d{1,2}:\d{2})$/);
+    const timeMatch = cleaned.match(/\s+(\d{1,2}:\d{2})$/);
     if (timeMatch) {
       timePart = timeMatch[1];
       cleaned = cleaned.replace(/\s+\d{1,2}:\d{2}$/, "").trim();
     }
 
-    // Format: "आइतबार, असोज ५, २०८२"
-    const regex =
-      /^([^\p{Nd},]+),\s*([^\p{Nd}\s]+)\s+(\p{Nd}{1,2}),\s*(\p{Nd}{4})$/u;
+    // Flexible regex: Day name (anything before comma), comma, month, day, year
+    const regex = /^[^,]+,\s*([^\s,]+)\s+(\d{1,2}),\s*(\d{4})$/;
     const match = cleaned.match(regex);
 
     if (!match) {
-      console.warn(`Invalid Setopati date format: ${dateString}`);
+      console.warn(
+        `Invalid Setopati date format after normalize: "${dateString}" -> "${cleaned}"`
+      );
       return null;
     }
 
-    const [, , monthName, dayStr, yearStr] = match;
+    const [, monthName, dayStr, yearStr] = match;
 
-    const normalizedDay = normalizeNepaliDigits(dayStr);
-    const normalizedYear = normalizeNepaliDigits(yearStr);
-
-    const bsDay = parseInt(normalizedDay, 10);
-    const bsYear = parseInt(normalizedYear, 10);
+    const bsDay = parseInt(dayStr, 10);
+    const bsYear = parseInt(yearStr, 10);
     const bsMonth = nepaliMonthMap[monthName];
 
     if (isNaN(bsDay) || isNaN(bsYear) || !bsMonth) {
       console.warn(
-        `Could not parse Setopati date components: ${monthName}, ${bsDay}, ${bsYear}`
+        `Could not parse Setopati date components: month="${monthName}", day=${bsDay}, year=${bsYear}`
       );
       return null;
     }
@@ -84,6 +87,9 @@ export function parseSetopatiDate(dateString) {
       return null;
     }
 
+    console.log(
+      `Parsed Setopati "${dateString}" to AD: ${adDate.toISOString()}`
+    );
     return adDate;
   } catch (err) {
     console.error(`Fatal error parsing Setopati date: ${dateString}`, err);
