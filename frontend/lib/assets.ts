@@ -3,21 +3,7 @@ import { ApiArticle } from "./types";
 
 export type Language = "en" | "np";
 
-export type TopicKey =
-  | "POLITICS"
-  | "BUSINESS"
-  | "ENTERTAINMENT"
-  | "SPORTS"
-  | "HEALTH"
-  | "EDUCATION"
-  | "TECHNOLOGY"
-  | "INTERNATIONAL"
-  | "MERO_SHARE"
-  | "GENERAL"
-  | "TRENDING"
-  | "LIFESTYLE"
-  | "NATIONAL"
-  | "OPINION";
+export type TopicKey = string;
 
 interface Localization {
   navigation: {

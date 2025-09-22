@@ -79,17 +79,12 @@ export class ScrappingService {
           publisherId,
           publishedAt,
           dateEnglish: publishedAt.toISOString().split("T")[0],
-          timeEnglish: publishedAt.toLocaleTimeString("en-US", {
+          time: publishedAt.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: true,
           }),
           dateNepali: dateNepaliPart,
-          timeNepali: publishedAt.toLocaleTimeString("ne-NP", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          }),
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);

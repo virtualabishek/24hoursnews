@@ -24,8 +24,8 @@ export function SearchSuggestions({
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const popularSearches = {
-    en: ["Politics", "Sports", "Business"],
-    np: ["राजनीति", "खेलकुद", "व्यापार"],
+    en: ["Politics", "Sports", "Business", "Health"],
+    np: ["राजनीति", "खेलकुद", "व्यापार", "स्वास्थ्य"],
   };
 
   useEffect(() => {

@@ -21,8 +21,7 @@ export interface ApiArticle {
   nepaliHeading: string;
   dateEnglish: string | null;
   dateNepali: string | null;
-  timeEnglish: string | null;
-  timeNepali: string | null;
+  time: string | null;
   url: string;
   image_url: string | null;
   publisher: string;

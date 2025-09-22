@@ -25,7 +25,7 @@ export function NewsCard({ article }: NewsCardProps) {
     }
 
     if (language === "np") {
-      return `${article.dateNepali} • ${article.timeNepali}`;
+      return `${article.dateNepali} • ${article.time}`;
     }
     const date = new Date(dateStr);
     const formattedDate = date.toLocaleDateString("en-US", {
@@ -33,7 +33,7 @@ export function NewsCard({ article }: NewsCardProps) {
       month: "short",
       day: "numeric",
     });
-    return `${formattedDate} • ${article.timeEnglish}`;
+    return `${formattedDate} • ${article.time}`;
   };
   return (
     <Card className="group hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-card border-border overflow-hidden min-w-[280px] sm:min-w-[320px] max-w-[380px] flex-shrink-0 hover:border-primary/20">

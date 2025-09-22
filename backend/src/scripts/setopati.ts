@@ -1,4 +1,3 @@
-// src/scrappers/setopati.js (updated image extraction)
 import axios from "axios";
 import { JSDOM } from "jsdom";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
@@ -59,10 +58,10 @@ export class SetopatiScraper {
           fullUrl = `https://www.setopati.com${articleUrl}`;
         }
 
-        // Extract date from category page directly (textContent includes the date)
+        // Extract date from category page (for initial reference)
         const categoryDate = timeStampElement.textContent?.trim() || "No date";
 
-        // Extract image from category page thumbnail (prefer data-src or src, avoid placeholder)
+        // Extract image from category page thumbnail
         let imageUrl = "No image";
         const src = imageElement.getAttribute("src");
         const dataSrc = imageElement.getAttribute("data-src");
@@ -90,12 +89,15 @@ export class SetopatiScraper {
           description = articleDetails.description;
         }
 
+        // Use the date from article details (which includes time) instead of category date
+        const nepaliDateString = articleDetails?.date || categoryDate;
+
         newsData.push({
           title: titleElement.textContent?.trim() || "No title",
           link: fullUrl,
-          image: imageUrl, // Use extracted category thumbnail
+          image: imageUrl,
           description,
-          nepaliDateString: categoryDate, // Use category date directly
+          nepaliDateString, // Now includes time from article details
         });
       }
 
@@ -121,12 +123,12 @@ export class SetopatiScraper {
       const dom = new JSDOM(response.data);
       const doc = dom.window.document;
 
-      // Extract description: Target p with style="text-align: justify;" (from HTML)
+      // Extract description
       const descElems = doc.querySelectorAll('p[style*="text-align: justify"]');
       let description = "";
       if (descElems.length > 0) {
         description = Array.from(descElems)
-          .slice(0, 2) // First 2 paragraphs
+          .slice(0, 2)
           .map((el) => el.textContent?.trim())
           .filter(Boolean)
           .join(" ");
@@ -135,7 +137,7 @@ export class SetopatiScraper {
         }
       }
 
-      // Date from article (optional)
+      // Extract date and time from article page
       let date = "";
       const dateSelectors = [
         ".published-date .pub-date",

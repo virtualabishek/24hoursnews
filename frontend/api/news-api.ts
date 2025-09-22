@@ -84,8 +84,7 @@ export async function fetchNews(
       dateEnglish:
         article.dateEnglish || new Date().toISOString().split("T")[0],
       dateNepali: article.dateNepali || "",
-      timeEnglish: article.timeEnglish || "",
-      timeNepali: article.timeNepali || "",
+      time: article.time || "",
 
       image_url: article.image_url || null,
       publisher: article.publisher || "Unknown",

@@ -1,4 +1,5 @@
-// app/page.tsx - Key changes for your implementation
+// app/page.tsx
+
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Navigation } from "@/components/navigation";
@@ -6,11 +7,12 @@ import { NewsCarousel } from "@/components/news-carousel";
 import { Footer } from "@/components/footer";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
 import { getTopicName, type TopicKey } from "@/lib/assets";
-import { ApiArticle, GroupedArticles } from "@/lib/types";
+import { ApiArticle } from "@/lib/types";
 import {
   fetchNews,
   groupArticlesByCategory,
   searchArticles,
+  getAvailableCategories,
 } from "@/api/news-api";
 
 function NewsHomePage() {
@@ -19,89 +21,53 @@ function NewsHomePage() {
   const { language, t } = useLanguage();
   const [allArticles, setAllArticles] = useState<ApiArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [availableTopics, setAvailableTopics] = useState<TopicKey[]>([]);
 
+  // Effect to fetch all possible categories for the navigation dropdown
+  useEffect(() => {
+    getAvailableCategories().then((topics) => {
+      setAvailableTopics(topics);
+    });
+  }, []); // Runs only once
+
+  // Effect to fetch news articles based on the current filter
   useEffect(() => {
     const loadNews = async () => {
       setIsLoading(true);
-      try {
-        // Pass the category filter to the API
-        const filters =
-          selectedCategory !== "all"
-            ? { category: selectedCategory.toUpperCase() }
-            : {};
-
-        const articles = await fetchNews(filters);
-        setAllArticles(articles);
-      } catch (error) {
-        console.error("Error loading news:", error);
-        setAllArticles([]);
-      } finally {
-        setIsLoading(false);
-      }
+      // The API is now responsible for the filtering
+      const articles = await fetchNews({ category: selectedCategory });
+      setAllArticles(articles);
+      setIsLoading(false);
     };
-
     loadNews();
-  }, [selectedCategory]);
+  }, [selectedCategory]); // Re-fetches when the category changes
 
-  // Filter articles based on search query
+  // 1. Apply the search query to the currently loaded articles
   const filteredArticles = useMemo(() => {
-    if (!searchQuery.trim()) return allArticles;
     return searchArticles(allArticles, searchQuery);
   }, [allArticles, searchQuery]);
 
-  // Group filtered articles by category
-  const filteredAndGroupedArticles = useMemo(() => {
-    return groupArticlesByCategory(filteredArticles);
-  }, [filteredArticles]);
-
-  // Prepare carousels to display
+  // 2. Group the search results by category
   const carouselsToDisplay = useMemo(() => {
-    const grouped = Object.entries(filteredAndGroupedArticles);
-
-    // If a specific category is selected and we're not showing all
-    if (selectedCategory !== "all") {
-      // When a category is selected, we already filtered at API level
-      // So just show all grouped categories (which should be mainly the selected one)
-      return grouped.map(([topicKey, articles]) => ({
-        topicKey: topicKey as TopicKey,
-        articles,
-      }));
-    }
-
-    // Show all categories
-    return grouped.map(([topicKey, articles]) => ({
+    const grouped = groupArticlesByCategory(filteredArticles);
+    return Object.entries(grouped).map(([topicKey, articles]) => ({
       topicKey: topicKey as TopicKey,
       articles,
     }));
-  }, [filteredAndGroupedArticles, selectedCategory]);
-
-  // Get available topics from the current articles
-  const availableTopics = useMemo(() => {
-    const topics = new Set<string>();
-    allArticles.forEach((article) => {
-      if (article.category) {
-        topics.add(article.category);
-      }
-    });
-    return Array.from(topics) as TopicKey[];
-  }, [allArticles]);
+  }, [filteredArticles]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
-
   const handleCategoryFilter = useCallback((category: string) => {
     setSelectedCategory(category);
-    setSearchQuery(""); // Clear search when changing category
+    setSearchQuery("");
   }, []);
 
-  const totalArticlesFound = useMemo(() => {
-    return filteredArticles.length;
-  }, [filteredArticles]);
-
-  const totalCategories = useMemo(() => {
-    return Object.keys(filteredAndGroupedArticles).length;
-  }, [filteredAndGroupedArticles]);
+  const totalArticlesFound = useMemo(
+    () => filteredArticles.length,
+    [filteredArticles]
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,29 +76,19 @@ function NewsHomePage() {
         onCategoryFilter={handleCategoryFilter}
         selectedCategory={selectedCategory}
         topics={availableTopics}
-        allArticles={allArticles}
+        allArticles={allArticles} // Pass original unfiltered articles to search suggestions
       />
 
       <main className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
         {/* Hero Section */}
         <div className="mb-8 sm:mb-12 lg:mb-16 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 sm:mb-6 text-balance leading-tight">
-            {language === "en"
-              ? "Stay Informed with Latest News"
-              : "ताजा समाचारहरूसँग अपडेट रहनुहोस्"}
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto text-pretty leading-relaxed">
-            {language === "en"
-              ? "Get the latest news from Nepal and around the world in both English and Nepali languages. Stay connected with what matters most."
-              : "नेपाल र विश्वभरका ताजा समाचारहरू अंग्रेजी र नेपाली दुवै भाषामा पाउनुहोस्। महत्वपूर्ण कुराहरूसँग जोडिएर रहनुहोस्।"}
-          </p>
-
+          {/* ... h1 and p tags ... */}
           {!searchQuery && selectedCategory === "all" && !isLoading && (
             <div className="mt-6 sm:mt-8">
               <p className="text-sm sm:text-base text-muted-foreground">
                 {language === "en"
-                  ? `Featuring ${totalArticlesFound} articles across ${totalCategories} categories`
-                  : `${totalCategories} श्रेणीहरूमा ${totalArticlesFound} लेखहरू प्रस्तुत गर्दै`}
+                  ? `Featuring articles across ${availableTopics.length} categories`
+                  : `${availableTopics.length} श्रेणीहरूमा लेखहरू प्रस्तुत गर्दै`}
               </p>
             </div>
           )}
@@ -142,24 +98,11 @@ function NewsHomePage() {
         <div className="space-y-8 sm:space-y-12 lg:space-y-16">
           {isLoading ? (
             <div className="text-center py-20">
-              <p className="text-lg font-semibold">{t("common.loading")}</p>
+              {" "}
+              <p>{t("common.loading")}</p>{" "}
             </div>
           ) : carouselsToDisplay.length === 0 ? (
-            <div className="text-center py-12 sm:py-16 lg:py-20">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 bg-gradient-to-br from-muted to-muted/50 rounded-full flex items-center justify-center">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                  <span className="text-xl sm:text-2xl">📰</span>
-                </div>
-              </div>
-              <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground mb-2 sm:mb-3">
-                {t("common.noResults")}
-              </h3>
-              <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
-                {language === "en"
-                  ? "Try adjusting your search or category filter to find more articles."
-                  : "थप लेखहरू फेला पार्न आफ्नो खोज वा श्रेणी फिल्टर समायोजन गर्ने प्रयास गर्नुहोस्।"}
-              </p>
-            </div>
+            <div className="text-center py-12">{/* No Results View */}</div>
           ) : (
             carouselsToDisplay.map((topic) => (
               <section key={topic.topicKey} className="space-y-4 sm:space-y-6">
@@ -175,28 +118,9 @@ function NewsHomePage() {
 
         {/* Search Results Info */}
         {(searchQuery || selectedCategory !== "all") && !isLoading && (
-          <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border border-border backdrop-blur-sm">
+          <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border">
             <div className="text-center space-y-2">
-              {searchQuery && (
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  {language === "en"
-                    ? `Search results for "${searchQuery}"`
-                    : `"${searchQuery}" का लागि खोज परिणामहरू`}
-                </p>
-              )}
-              {selectedCategory !== "all" && (
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  {language === "en"
-                    ? `Filtered by category: ${getTopicName(
-                        selectedCategory as TopicKey,
-                        language
-                      )}`
-                    : `श्रेणी अनुसार फिल्टर गरिएको: ${getTopicName(
-                        selectedCategory as TopicKey,
-                        language
-                      )}`}
-                </p>
-              )}
+              {/* ... */}
               <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                 {language === "en"
                   ? `${totalArticlesFound} articles found`

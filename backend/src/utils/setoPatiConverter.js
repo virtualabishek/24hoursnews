@@ -35,21 +35,32 @@ export function parseSetopatiDate(dateString) {
     // Strip prefix if present (e.g., "प्रकाशित मिति: ")
     cleaned = cleaned.replace(/^प्रकाशित मिति:\s*/, "");
 
-    // Normalize Nepali digits FIRST
+    // Normalize Nepali digits
     cleaned = normalizeNepaliDigits(cleaned);
 
     // Log for debug
     console.log(`Setopati cleaned date: "${cleaned}"`);
 
-    // Handle time if present (e.g., "  15:46")
-    let timePart = "12:00"; // Default midday
-    const timeMatch = cleaned.match(/\s+(\d{1,2}:\d{2})$/);
+    // Extract time
+    let timePart = null;
+    const timeMatch = cleaned.match(/\s+(\d{1,2}:\d{2})\s*$/);
     if (timeMatch) {
       timePart = timeMatch[1];
-      cleaned = cleaned.replace(/\s+\d{1,2}:\d{2}$/, "").trim();
+      cleaned = cleaned.replace(timeMatch[0], "").trim();
+      console.log(`Extracted time: ${timePart}`);
+    } else {
+      console.warn(
+        `No time found in "${cleaned}", using current time as fallback`
+      );
+      timePart = new Date()
+        .toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        .replace(" ", "");
     }
 
-    // Flexible regex: Day name (anything before comma), comma, month, day, year
+    // Flexible regex for date
     const regex = /^[^,]+,\s*([^\s,]+)\s+(\d{1,2}),\s*(\d{4})$/;
     const match = cleaned.match(regex);
 
@@ -73,12 +84,12 @@ export function parseSetopatiDate(dateString) {
       return null;
     }
 
-    const nepaliDate = new NepaliDate(bsYear, bsMonth, bsDay);
+    const nepaliDate = new NepaliDate(bsYear, bsMonth - 1, bsDay);
     const adDate = nepaliDate.toJsDate();
 
-    // Parse and set time
+    // Parse and set time without manual timezone adjustment
     const [hoursStr, minutesStr] = timePart.split(":");
-    const hours = parseInt(hoursStr, 10) || 12;
+    const hours = parseInt(hoursStr, 10) || 0;
     const minutes = parseInt(minutesStr, 10) || 0;
     adDate.setHours(hours, minutes, 0, 0);
 

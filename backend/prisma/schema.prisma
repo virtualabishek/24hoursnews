@@ -21,10 +21,8 @@ model News {
   nepaliTitle      String?
   englishDescription String?        @db.Text
   dateEnglish String?
-  timeEnglish String?
   dateNepali String?
-  timeNepali String?
-  sharedTime String?
+  time String?
   category          Category
   publisher         Publisher @relation(fields: [publisherId], references: [id])
   publisherId       String

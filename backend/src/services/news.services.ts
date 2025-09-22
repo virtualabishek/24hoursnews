@@ -13,13 +13,16 @@ function formatArticleForFrontend(news: any) {
     nepaliHeading: news.nepaliTitle,
     dateEnglish: news.dateEnglish,
     dateNepali: news.dateNepali,
-    timeEnglish: news.timeEnglish,
-    timeNepali: news.timeNepali,
+    time: news.time,
     url: news.url,
     image_url: news.imageUrl,
     publisher: news.publisher.name,
-    engDescription: news.englishDescription || "No description available.",
-    nepaliDescription: news.nepaliDescription || "विवरण उपलब्ध छैन।",
+    engDescription:
+      news.englishDescription ||
+      news.nepaliDescription ||
+      "No description available.",
+    nepaliDescription:
+      news.nepaliDescription || news.englishDescription || "विवरण उपलब्ध छैन।",
   };
 }
 
@@ -51,4 +54,14 @@ export async function fetchNews(filters: FetchNewsFilters) {
   }
   allNews.sort((a, b) => b.publishedAt!.getTime() - a.publishedAt!.getTime());
   return allNews.map(formatArticleForFrontend);
+}
+
+export async function fetchAvailableCategories() {
+  const newsWithCategories = await prisma.news.findMany({
+    distinct: ["category"],
+    select: {
+      category: true,
+    },
+  });
+  return newsWithCategories.map((cat) => cat.category);
 }
