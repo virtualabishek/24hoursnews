@@ -1,37 +1,40 @@
-"use client"
-import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ExternalLink, Calendar, User } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
-import type { NewsArticle } from "@/lib/assets"
-import Image from "next/image"
+"use client";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Calendar, User } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
+import type { ApiArticle } from "@/lib/types";
+import Image from "next/image";
 
 interface NewsCardProps {
-  article: NewsArticle
+  article: ApiArticle;
 }
 
 export function NewsCard({ article }: NewsCardProps) {
-  const { language, t } = useLanguage()
-  const [imageError, setImageError] = useState(false)
+  const { language, t } = useLanguage();
+  const [imageError, setImageError] = useState(false);
 
   const handleImageError = () => {
-    setImageError(true)
-  }
+    setImageError(true);
+  };
 
-  const formatDate = (dateStr: string) => {
-    if (language === "np") {
-      return `${article.dateNepali} • ${article.timeNepali}`
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) {
+      return "";
     }
-    const date = new Date(dateStr)
+
+    if (language === "np") {
+      return `${article.dateNepali} • ${article.timeNepali}`;
+    }
+    const date = new Date(dateStr);
     const formattedDate = date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    })
-    return `${formattedDate} • ${article.timeEnglish}`
-  }
-
+    });
+    return `${formattedDate} • ${article.timeEnglish}`;
+  };
   return (
     <Card className="group hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-card border-border overflow-hidden min-w-[280px] sm:min-w-[320px] max-w-[380px] flex-shrink-0 hover:border-primary/20">
       <div className="relative aspect-video overflow-hidden">
@@ -65,7 +68,9 @@ export function NewsCard({ article }: NewsCardProps) {
 
           {/* Description */}
           <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-            {language === "en" ? article.engDescription : article.nepaliDescription}
+            {language === "en"
+              ? article.engDescription
+              : article.nepaliDescription}
           </p>
 
           {/* Meta Information */}
@@ -73,7 +78,9 @@ export function NewsCard({ article }: NewsCardProps) {
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-1">
                 <User className="w-3 h-3" />
-                <span className="truncate max-w-[120px]">{article.publisher}</span>
+                <span className="truncate max-w-[120px]">
+                  {article.publisher}
+                </span>
               </div>
               <div className="flex items-center space-x-1">
                 <Calendar className="w-3 h-3" />
@@ -87,7 +94,9 @@ export function NewsCard({ article }: NewsCardProps) {
             variant="outline"
             size="sm"
             className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300 bg-transparent hover:shadow-md"
-            onClick={() => window.open(article.url, "_blank", "noopener,noreferrer")}
+            onClick={() =>
+              window.open(article.url, "_blank", "noopener,noreferrer")
+            }
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             {t("common.readMore")}
@@ -95,5 +104,5 @@ export function NewsCard({ article }: NewsCardProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

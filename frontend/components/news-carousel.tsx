@@ -1,62 +1,62 @@
-"use client"
-import { useRef, useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Flame } from "lucide-react"
-import { NewsCard } from "./news-card"
-import type { NewsArticle, TopicKey } from "@/lib/assets"
-import { isHotTopic } from "@/lib/assets"
+"use client";
+import { useRef, useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { NewsCard } from "./news-card";
+import type { NewsArticle, TopicKey } from "@/lib/assets";
 
 interface NewsCarouselProps {
-  articles: NewsArticle[]
-  title: string
-  topicKey?: TopicKey
+  articles: NewsArticle[];
+  title: string;
+  topicKey?: TopicKey;
 }
 
 export function NewsCarousel({ articles, title, topicKey }: NewsCarouselProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   const checkScrollButtons = () => {
     if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
-      setCanScrollLeft(scrollLeft > 0)
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1)
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
     }
-  }
+  };
 
   useEffect(() => {
-    checkScrollButtons()
-    const container = scrollContainerRef.current
+    checkScrollButtons();
+    const container = scrollContainerRef.current;
     if (container) {
-      container.addEventListener("scroll", checkScrollButtons)
-      const resizeObserver = new ResizeObserver(checkScrollButtons)
-      resizeObserver.observe(container)
+      container.addEventListener("scroll", checkScrollButtons);
+      const resizeObserver = new ResizeObserver(checkScrollButtons);
+      resizeObserver.observe(container);
       return () => {
-        container.removeEventListener("scroll", checkScrollButtons)
-        resizeObserver.disconnect()
-      }
+        container.removeEventListener("scroll", checkScrollButtons);
+        resizeObserver.disconnect();
+      };
     }
-  }, [articles])
+  }, [articles]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
-      const scrollAmount = window.innerWidth < 640 ? 300 : 340 // Responsive scroll amount
+      const scrollAmount = window.innerWidth < 640 ? 300 : 340; // Responsive scroll amount
       const newScrollLeft =
-        scrollContainerRef.current.scrollLeft + (direction === "left" ? -scrollAmount : scrollAmount)
+        scrollContainerRef.current.scrollLeft +
+        (direction === "left" ? -scrollAmount : scrollAmount);
 
       scrollContainerRef.current.scrollTo({
         left: newScrollLeft,
         behavior: "smooth",
-      })
+      });
     }
-  }
+  };
 
   if (!articles || articles.length === 0) {
-    return null
+    return null;
   }
-
-  const showHotIcon = topicKey && isHotTopic(topicKey)
+  const showHotIcon = topicKey === "POLITICS";
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -68,7 +68,9 @@ export function NewsCarousel({ articles, title, topicKey }: NewsCarouselProps) {
               <Flame className="w-4 h-4 text-white" />
             </div>
           )}
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground text-balance">{title}</h2>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground text-balance">
+            {title}
+          </h2>
         </div>
         <div className="flex space-x-2">
           <Button
@@ -116,5 +118,5 @@ export function NewsCarousel({ articles, title, topicKey }: NewsCarouselProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

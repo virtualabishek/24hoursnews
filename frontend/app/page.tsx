@@ -1,65 +1,90 @@
+// app/page.tsx - Key changes for your implementation
 "use client";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Navigation } from "@/components/navigation";
 import { NewsCarousel } from "@/components/news-carousel";
 import { Footer } from "@/components/footer";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
+import { getTopicName, type TopicKey } from "@/lib/assets";
+import { ApiArticle, GroupedArticles } from "@/lib/types";
 import {
-  getAllTopics,
-  getArticlesByTopic,
-  getTopicName,
-  type TopicKey,
-} from "@/lib/assets";
+  fetchNews,
+  groupArticlesByCategory,
+  searchArticles,
+} from "@/api/news-api";
 
 function NewsHomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { language, t } = useLanguage();
-  const topics = getAllTopics();
+  const [allArticles, setAllArticles] = useState<ApiArticle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredTopics = useMemo(() => {
-    let filtered = topics.map((topicKey) => ({
-      topicKey,
-      articles: getArticlesByTopic(topicKey),
-    }));
+  useEffect(() => {
+    const loadNews = async () => {
+      setIsLoading(true);
+      try {
+        // Pass the category filter to the API
+        const filters =
+          selectedCategory !== "all"
+            ? { category: selectedCategory.toUpperCase() }
+            : {};
 
+        const articles = await fetchNews(filters);
+        setAllArticles(articles);
+      } catch (error) {
+        console.error("Error loading news:", error);
+        setAllArticles([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadNews();
+  }, [selectedCategory]);
+
+  // Filter articles based on search query
+  const filteredArticles = useMemo(() => {
+    if (!searchQuery.trim()) return allArticles;
+    return searchArticles(allArticles, searchQuery);
+  }, [allArticles, searchQuery]);
+
+  // Group filtered articles by category
+  const filteredAndGroupedArticles = useMemo(() => {
+    return groupArticlesByCategory(filteredArticles);
+  }, [filteredArticles]);
+
+  // Prepare carousels to display
+  const carouselsToDisplay = useMemo(() => {
+    const grouped = Object.entries(filteredAndGroupedArticles);
+
+    // If a specific category is selected and we're not showing all
     if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (topic) => topic.topicKey === selectedCategory
-      );
+      // When a category is selected, we already filtered at API level
+      // So just show all grouped categories (which should be mainly the selected one)
+      return grouped.map(([topicKey, articles]) => ({
+        topicKey: topicKey as TopicKey,
+        articles,
+      }));
     }
 
-    if (searchQuery.trim()) {
-      const searchLower = searchQuery.toLowerCase();
-      filtered = filtered
-        .map((topic) => ({
-          ...topic,
-          articles: topic.articles.filter((article) => {
-            const engHeading = article.engHeading.toLowerCase();
-            const nepaliHeading = article.nepaliHeading.toLowerCase();
-            const engDescription = article.engDescription.toLowerCase();
-            const nepaliDescription = article.nepaliDescription.toLowerCase();
-            const publisher = article.publisher.toLowerCase();
-            const topicName = getTopicName(
-              topic.topicKey,
-              language
-            ).toLowerCase();
+    // Show all categories
+    return grouped.map(([topicKey, articles]) => ({
+      topicKey: topicKey as TopicKey,
+      articles,
+    }));
+  }, [filteredAndGroupedArticles, selectedCategory]);
 
-            return (
-              engHeading.includes(searchLower) ||
-              nepaliHeading.includes(searchLower) ||
-              engDescription.includes(searchLower) ||
-              nepaliDescription.includes(searchLower) ||
-              publisher.includes(searchLower) ||
-              topicName.includes(searchLower)
-            );
-          }),
-        }))
-        .filter((topic) => topic.articles.length > 0);
-    }
-
-    return filtered;
-  }, [topics, searchQuery, selectedCategory, language]);
+  // Get available topics from the current articles
+  const availableTopics = useMemo(() => {
+    const topics = new Set<string>();
+    allArticles.forEach((article) => {
+      if (article.category) {
+        topics.add(article.category);
+      }
+    });
+    return Array.from(topics) as TopicKey[];
+  }, [allArticles]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -67,13 +92,16 @@ function NewsHomePage() {
 
   const handleCategoryFilter = useCallback((category: string) => {
     setSelectedCategory(category);
-    setSearchQuery("");
+    setSearchQuery(""); // Clear search when changing category
   }, []);
 
-  const totalArticles = filteredTopics.reduce(
-    (acc, topic) => acc + topic.articles.length,
-    0
-  );
+  const totalArticlesFound = useMemo(() => {
+    return filteredArticles.length;
+  }, [filteredArticles]);
+
+  const totalCategories = useMemo(() => {
+    return Object.keys(filteredAndGroupedArticles).length;
+  }, [filteredAndGroupedArticles]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,6 +109,8 @@ function NewsHomePage() {
         onSearch={handleSearch}
         onCategoryFilter={handleCategoryFilter}
         selectedCategory={selectedCategory}
+        topics={availableTopics}
+        allArticles={allArticles}
       />
 
       <main className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
@@ -97,12 +127,12 @@ function NewsHomePage() {
               : "नेपाल र विश्वभरका ताजा समाचारहरू अंग्रेजी र नेपाली दुवै भाषामा पाउनुहोस्। महत्वपूर्ण कुराहरूसँग जोडिएर रहनुहोस्।"}
           </p>
 
-          {!searchQuery && selectedCategory === "all" && (
+          {!searchQuery && selectedCategory === "all" && !isLoading && (
             <div className="mt-6 sm:mt-8">
               <p className="text-sm sm:text-base text-muted-foreground">
                 {language === "en"
-                  ? `Featuring ${totalArticles}+ articles across ${topics.length} categories`
-                  : `${topics.length} श्रेणीहरूमा ${totalArticles}+ लेखहरू प्रस्तुत गर्दै`}
+                  ? `Featuring ${totalArticlesFound} articles across ${totalCategories} categories`
+                  : `${totalCategories} श्रेणीहरूमा ${totalArticlesFound} लेखहरू प्रस्तुत गर्दै`}
               </p>
             </div>
           )}
@@ -110,7 +140,11 @@ function NewsHomePage() {
 
         {/* News Sections */}
         <div className="space-y-8 sm:space-y-12 lg:space-y-16">
-          {filteredTopics.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-20">
+              <p className="text-lg font-semibold">{t("common.loading")}</p>
+            </div>
+          ) : carouselsToDisplay.length === 0 ? (
             <div className="text-center py-12 sm:py-16 lg:py-20">
               <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 bg-gradient-to-br from-muted to-muted/50 rounded-full flex items-center justify-center">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/20 rounded-full flex items-center justify-center">
@@ -127,7 +161,7 @@ function NewsHomePage() {
               </p>
             </div>
           ) : (
-            filteredTopics.map((topic) => (
+            carouselsToDisplay.map((topic) => (
               <section key={topic.topicKey} className="space-y-4 sm:space-y-6">
                 <NewsCarousel
                   articles={topic.articles}
@@ -139,8 +173,8 @@ function NewsHomePage() {
           )}
         </div>
 
-        {/* Enhanced Search Results Info */}
-        {(searchQuery || selectedCategory !== "all") && (
+        {/* Search Results Info */}
+        {(searchQuery || selectedCategory !== "all") && !isLoading && (
           <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border border-border backdrop-blur-sm">
             <div className="text-center space-y-2">
               {searchQuery && (
@@ -165,8 +199,8 @@ function NewsHomePage() {
               )}
               <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                 {language === "en"
-                  ? `${totalArticles} articles found`
-                  : `${totalArticles} लेखहरू फेला परे`}
+                  ? `${totalArticlesFound} articles found`
+                  : `${totalArticlesFound} लेखहरू फेला परे`}
               </p>
             </div>
           </div>

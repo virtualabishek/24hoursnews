@@ -1,28 +1,23 @@
 import localizationData from "@/data/localization.json";
-import newsData from "@/data/news-data.json";
+import { ApiArticle } from "./types";
 
 export type Language = "en" | "np";
 
-export interface NewsArticle {
-  id?: string;
-  engHeading: string;
-  nepaliHeading: string;
-  engDescription: string;
-  nepaliDescription: string;
-  dateEnglish: string;
-  dateNepali: string;
-  timeEnglish: string;
-  timeNepali: string;
-  url: string;
-  image_url: string;
-  publisher: string;
-}
-
 export type TopicKey =
-  | "gen-protest"
-  | "international"
-  | "technology"
-  | "share-market";
+  | "POLITICS"
+  | "BUSINESS"
+  | "ENTERTAINMENT"
+  | "SPORTS"
+  | "HEALTH"
+  | "EDUCATION"
+  | "TECHNOLOGY"
+  | "INTERNATIONAL"
+  | "MERO_SHARE"
+  | "GENERAL"
+  | "TRENDING"
+  | "LIFESTYLE"
+  | "NATIONAL"
+  | "OPINION";
 
 interface Localization {
   navigation: {
@@ -32,11 +27,7 @@ interface Localization {
     theme: string;
   };
   categories: {
-    "hot-topic": string;
-    international: string;
-    technology: string;
-    information: string;
-    "share-market": string;
+    [key: string]: string;
   };
   common: {
     readMore: string;
@@ -51,109 +42,73 @@ interface Localization {
   };
 }
 
+const categoryNames: Record<TopicKey, { en: string; np: string }> = {
+  POLITICS: { en: "Politics", np: "राजनीति" },
+  BUSINESS: { en: "Business", np: "व्यापार" },
+  ENTERTAINMENT: { en: "Entertainment", np: "मनोरञ्जन" },
+  SPORTS: { en: "Sports", np: "खेलकुद" },
+  HEALTH: { en: "Health", np: "स्वास्थ्य" },
+  EDUCATION: { en: "Education", np: "शिक्षा" },
+  TECHNOLOGY: { en: "Technology", np: "प्रविधि" },
+  INTERNATIONAL: { en: "International", np: "अन्तर्राष्ट्रिय" },
+  MERO_SHARE: { en: "Share Market", np: "शेयर बजार" },
+  GENERAL: { en: "General", np: "सामान्य" },
+  TRENDING: { en: "Trending", np: "ट्रेन्डिङ" },
+  LIFESTYLE: { en: "Lifestyle", np: "जीवनशैली" },
+  NATIONAL: { en: "National", np: "राष्ट्रिय" },
+  OPINION: { en: "Opinion", np: "विचार" },
+};
+
 export function getLocalization(language: Language = "en"): Localization {
+  const fallbackLocalization: Localization = {
+    navigation: {
+      search: language === "en" ? "Search..." : "खोज्नुहोस्...",
+      allCategories: language === "en" ? "All Categories" : "सबै श्रेणीहरू",
+      language: language === "en" ? "Language" : "भाषा",
+      theme: language === "en" ? "Theme" : "थिम",
+    },
+    categories: Object.keys(categoryNames).reduce((acc, key) => {
+      acc[key] = categoryNames[key as TopicKey][language];
+      return acc;
+    }, {} as Record<string, string>),
+    common: {
+      readMore: language === "en" ? "Read More" : "थप पढ्नुहोस्",
+      noResults:
+        language === "en" ? "No results found" : "कुनै नतिजा फेला परेन",
+      loading: language === "en" ? "Loading..." : "लोड गर्दै...",
+      publishedOn: language === "en" ? "Published on" : "प्रकाशित मिति",
+    },
+    footer: {
+      madeBy: language === "en" ? "Made by" : "निर्माता",
+      company: "AstaVision Infosys",
+      allRightsReserved:
+        language === "en" ? "All rights reserved." : "सबै अधिकार सुरक्षित।",
+    },
+  };
+
   if (!localizationData || !localizationData[language]) {
-    return {
-      navigation: {
-        search: "Search...",
-        allCategories: "All Categories",
-        language: "Language",
-        theme: "Theme",
-      },
-      categories: {
-        "hot-topic": "Hot Topic: Gen Z Protest",
-        international: "Internation",
-        technology: "Technology",
-        information: "Information",
-        "share-market": "Share Market",
-      },
-      common: {
-        readMore: "Read More",
-        noResults: "No results found",
-        loading: "Loading...",
-        publishedOn: "Published on",
-      },
-      footer: {
-        madeBy: "Made by",
-        company: "AstaVision Infosys",
-        allRightsReserved: "All rights reserved.",
-      },
-    };
+    return fallbackLocalization;
   }
 
-  return localizationData[language] as Localization;
+  // Merge with fallback to ensure all keys exist
+  const loadedData = localizationData[language] as Localization;
+  return {
+    ...fallbackLocalization,
+    ...loadedData,
+    categories: {
+      ...fallbackLocalization.categories,
+      ...(loadedData.categories || {}),
+    },
+  };
 }
 
-export function getAllTopics(): TopicKey[] {
-  return Object.keys(newsData) as TopicKey[];
-}
-
-export function getAllCategories(
-  language: Language = "en"
-): Array<{ key: TopicKey; name: string }> {
-  const translations = getLocalization(language);
-
-  if (!translations || !translations.categories) {
-    return [];
+export function getTopicName(topic: string, language: Language): string {
+  const upperTopic = topic.toUpperCase() as TopicKey;
+  if (categoryNames[upperTopic]) {
+    return categoryNames[upperTopic][language];
   }
 
-  return getAllTopics().map((topic) => ({
-    key: topic,
-    name:
-      translations.categories[topic === "gen-protest" ? "hot-topic" : topic] ||
-      topic,
-  }));
+  return topic.charAt(0).toUpperCase() + topic.slice(1).toLowerCase();
 }
 
-export function getTopicName(topic: TopicKey, language: Language): string {
-  const translations = getLocalization(language);
-  const categoryKey = topic === "gen-protest" ? "hot-topic" : topic;
-  return (
-    translations.categories[
-      categoryKey as keyof typeof translations.categories
-    ] || topic
-  );
-}
-
-export function isHotTopic(topic: TopicKey): boolean {
-  return topic === "gen-protest";
-}
-
-export function getArticlesByTopic(topic: TopicKey): NewsArticle[] {
-  return newsData[topic] || [];
-}
-
-export function getAllArticles(): NewsArticle[] {
-  return getAllTopics().flatMap((topic) => getArticlesByTopic(topic));
-}
-
-export function searchArticles(
-  query: string,
-  language: Language
-): NewsArticle[] {
-  if (!query.trim()) return [];
-
-  const searchTerm = query.toLowerCase();
-  const allArticles = getAllArticles();
-
-  return allArticles.filter((article) => {
-    const heading =
-      language === "en" ? article.engHeading : article.nepaliHeading;
-    const description =
-      language === "en" ? article.engDescription : article.nepaliDescription;
-
-    return (
-      heading.toLowerCase().includes(searchTerm) ||
-      description.toLowerCase().includes(searchTerm) ||
-      article.publisher.toLowerCase().includes(searchTerm)
-    );
-  });
-}
-
-export function filterArticlesByTopic(
-  articles: NewsArticle[],
-  topic: TopicKey | "all"
-): NewsArticle[] {
-  if (topic === "all") return articles;
-  return getArticlesByTopic(topic);
-}
+export type NewsArticle = ApiArticle;

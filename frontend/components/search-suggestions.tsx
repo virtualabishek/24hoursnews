@@ -3,27 +3,29 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, TrendingUp } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
-import { getAllCategories, searchArticles } from "@/lib/assets";
+import { ApiArticle } from "@/lib/types";
 
 interface SearchSuggestionsProps {
   searchQuery: string;
   onSuggestionClick: (suggestion: string) => void;
   isVisible: boolean;
+  articles: ApiArticle[];
+  categories: { key: string; name: string }[];
 }
 
 export function SearchSuggestions({
   searchQuery,
   onSuggestionClick,
   isVisible,
+  articles,
+  categories,
 }: SearchSuggestionsProps) {
   const { language, t } = useLanguage();
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  const categories = useMemo(() => getAllCategories(language), [language]);
-
   const popularSearches = {
-    en: ["Gen Z Protest", "Technology", "International"],
-    np: ["जेन जी आन्दोलन", "अन्तर्राष्ट्रिय", "प्रविधि"],
+    en: ["Politics", "Sports", "Business"],
+    np: ["राजनीति", "खेलकुद", "व्यापार"],
   };
 
   useEffect(() => {
@@ -32,26 +34,15 @@ export function SearchSuggestions({
       return;
     }
 
-    const matchingArticles = searchArticles(searchQuery, language);
-    const matchingSuggestions = new Set<string>();
-
-    matchingArticles.forEach((article) => {
-      if (article.publisher.toLowerCase().includes(searchQuery.toLowerCase())) {
-        matchingSuggestions.add(article.publisher);
-      }
-
+    const matchingArticles = articles.filter((article) => {
       const heading =
         language === "en" ? article.engHeading : article.nepaliHeading;
-      const words = heading
-        .split(" ")
-        .filter(
-          (word) =>
-            word.length > 3 &&
-            word.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      words.forEach((word) => matchingSuggestions.add(word));
+      return heading.toLowerCase().includes(searchQuery.toLowerCase());
     });
-
+    const matchingSuggestions = new Set<string>();
+    matchingArticles.forEach((article) => {
+      matchingSuggestions.add(article.publisher);
+    });
     categories.forEach((category) => {
       if (category.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         matchingSuggestions.add(category.name);
@@ -59,7 +50,7 @@ export function SearchSuggestions({
     });
 
     setSuggestions(Array.from(matchingSuggestions).slice(0, 6));
-  }, [searchQuery, language, categories]);
+  }, [searchQuery, language, articles, categories]);
 
   if (!isVisible || suggestions.length === 0) {
     return null;

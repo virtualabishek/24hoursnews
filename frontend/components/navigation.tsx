@@ -14,19 +14,24 @@ import {
 import { SearchSuggestions } from "./search-suggestions";
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/contexts/language-context";
-import { getAllTopics, getTopicName, type TopicKey } from "@/lib/assets";
+import { getTopicName, type TopicKey } from "@/lib/assets";
 import { useDebounce } from "@/hooks/use-debounce";
+import { ApiArticle } from "@/lib/types";
 
 interface NavigationProps {
   onSearch: (query: string) => void;
   onCategoryFilter: (category: string) => void;
   selectedCategory: string;
+  topics: TopicKey[];
+  allArticles: ApiArticle[];
 }
 
 export function Navigation({
   onSearch,
   onCategoryFilter,
   selectedCategory,
+  topics,
+  allArticles,
 }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,7 +39,6 @@ export function Navigation({
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const topics = getAllTopics();
   const searchRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -136,6 +140,11 @@ export function Navigation({
                 searchQuery={searchQuery}
                 onSuggestionClick={handleSuggestionClick}
                 isVisible={showSuggestions}
+                articles={allArticles}
+                categories={topics.map((t) => ({
+                  key: t,
+                  name: getTopicName(t, language),
+                }))}
               />
             </div>
 
@@ -146,7 +155,7 @@ export function Navigation({
                   variant="outline"
                   className="min-w-[140px] justify-between bg-transparent hover:bg-muted/50 transition-colors duration-300"
                 >
-                  <span className="truncate"> 
+                  <span className="truncate">
                     {selectedCategory === "all"
                       ? t("navigation.allCategories")
                       : getTopicName(selectedCategory as TopicKey, language)}
@@ -255,6 +264,11 @@ export function Navigation({
                 searchQuery={searchQuery}
                 onSuggestionClick={handleSuggestionClick}
                 isVisible={showSuggestions}
+                articles={allArticles}
+                categories={topics.map((t) => ({
+                  key: t,
+                  name: getTopicName(t, language),
+                }))}
               />
             </div>
 
