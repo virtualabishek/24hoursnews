@@ -97,17 +97,15 @@ export async function fetchNews(
 }
 
 export async function getAvailableCategories(): Promise<string[]> {
+  const url = `${API_BASE_URL}/api/news/categories`;
+  console.log("Fetching categories from:", url);
+
   try {
-    const articles = await fetchNews();
-    const categories = new Set<string>();
-
-    articles.forEach((article) => {
-      if (article.category) {
-        categories.add(article.category);
-      }
-    });
-
-    return Array.from(categories).sort();
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error("Failed to get categories:", error);
     return ["POLITICS", "BUSINESS", "TECHNOLOGY", "SPORTS", "GENERAL"];

@@ -16,22 +16,22 @@ const bbcScraper = new BBCSraper();
 const setopatiScraper = new SetopatiScraper();
 
 export const SCRAPPER_JOBS: ScrapeJob[] = [
-  // {
-  //   publisherName: "Online Khabar",
-  //   scraper: onlineKhabarScraper,
-  //   dateParser: parseOnlineKhabarDate,
-  //   targets: onlineKhabarTargets,
-  // },
+  {
+    publisherName: "Online Khabar",
+    scraper: onlineKhabarScraper,
+    dateParser: parseOnlineKhabarDate,
+    targets: onlineKhabarTargets,
+  },
   {
     publisherName: "BBC Nepali",
     scraper: bbcScraper,
     dateParser: parseBBCDate,
     targets: bbcTargets,
   },
-  // {
-  //   publisherName: "Setopati",
-  //   scraper: setopatiScraper,
-  //   dateParser: parseSetopatiDate,
-  //   targets: setopatiTargets,
-  // },
+  {
+    publisherName: "Setopati",
+    scraper: setopatiScraper,
+    dateParser: parseSetopatiDate,
+    targets: setopatiTargets,
+  },
 ];

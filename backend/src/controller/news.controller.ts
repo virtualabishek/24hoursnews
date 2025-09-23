@@ -1,14 +1,23 @@
 import type { Request, Response } from "express";
 import * as newsService from "../services/news.services.js";
 
+interface FetchNewsFilters {
+  category?: string;
+  publisherName?: string;
+}
+
 export const getNews = async (req: Request, res: Response) => {
   try {
-    const category = req.query.category as string | undefined;
-    const publisherName = req.query.publisher as string | undefined;
-    const newsArticles = await newsService.fetchNews({
-      category,
-      publisherName,
-    });
+    const categoryQuery = req.query.category as string | undefined;
+    const publisherQuery = req.query.publisher as string | undefined;
+    const filters: FetchNewsFilters = {};
+    if (categoryQuery) {
+      filters.category = categoryQuery;
+    }
+    if (publisherQuery) {
+      filters.publisherName = publisherQuery;
+    }
+    const newsArticles = await newsService.fetchNews(filters);
     res.status(200).json(newsArticles);
   } catch (error) {
     console.error("Failed to fetch news:", error);
