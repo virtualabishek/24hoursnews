@@ -6,7 +6,11 @@ import { Footer } from "@/components/footer";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
 import { getTopicName, type TopicKey } from "@/lib/assets";
 import { ApiArticle } from "@/lib/types";
-import { fetchNews, getAvailableCategories } from "@/api/news-api";
+import {
+  fetchNews,
+  getAvailableCategories,
+  groupArticlesByCategory,
+} from "@/api/news-api";
 
 function NewsHomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,44 +60,53 @@ function NewsHomePage() {
     }
   }, [selectedCategory]);
 
-  // Filter articles based on search query
-  const filteredArticles = useMemo(() => {
-    if (!searchQuery.trim()) return allArticles;
-    return allArticles.filter((article) => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        article.engHeading.toLowerCase().includes(searchLower) ||
-        article.nepaliHeading.toLowerCase().includes(searchLower) ||
-        article.engDescription.toLowerCase().includes(searchLower) ||
-        article.nepaliDescription.toLowerCase().includes(searchLower) ||
-        article.publisher.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [allArticles, searchQuery]);
+  const filteredArticles = allArticles;
 
-  // Group filtered articles by category (already limited to 15 in backend)
   const carouselsToDisplay = useMemo(() => {
-    const grouped: { [key: string]: ApiArticle[] } = {};
-    filteredArticles.forEach((article) => {
-      const cat = article.category || "GENERAL";
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(article);
-    });
+    const grouped = groupArticlesByCategory(allArticles);
     return Object.entries(grouped).map(([topicKey, articles]) => ({
       topicKey: topicKey as TopicKey,
       articles,
     }));
-  }, [filteredArticles]);
+  }, [allArticles]);
 
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
+  const handleSearch = useCallback(
+    async (query: string) => {
+      setSearchQuery(query);
+      if (query.trim()) {
+        setIsLoading(true);
+        try {
+          const articles = await fetchNews({ search: query });
+          setAllArticles(articles);
+        } catch (error) {
+          console.error("Search error:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // Reset to show all articles when search is cleared
+        const articles = await fetchNews({ category: selectedCategory });
+        setAllArticles(articles);
+      }
+    },
+    [selectedCategory]
+  );
 
-  const handleCategoryFilter = useCallback((category: string) => {
+  const handleCategoryFilter = useCallback(async (category: string) => {
     setSelectedCategory(category);
     setSearchQuery("");
+    setIsLoading(true);
+    try {
+      const articles = await fetchNews({
+        category: category === "all" ? undefined : category,
+      });
+      setAllArticles(articles);
+    } catch (error) {
+      console.error("Error loading filtered news:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
-
   const totalArticlesFound = useMemo(() => allArticles.length, [allArticles]);
 
   return (

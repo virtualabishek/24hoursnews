@@ -1,4 +1,3 @@
-// api/news-api.ts
 import { ApiArticle } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -6,38 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 interface FetchFilters {
   category?: string;
   publisher?: string;
-}
-
-/**
- * Infer category from article URL patterns
- * This is needed because the API doesn't always return a category field
- */
-function inferCategoryFromArticle(article: any): string {
-  const url = article.url?.toLowerCase() || "";
-
-  // Check URL patterns for category inference
-  if (url.includes("/politics/")) return "POLITICS";
-  if (
-    url.includes("/kinmel/") ||
-    url.includes("/banking/") ||
-    url.includes("/economy/")
-  )
-    return "BUSINESS";
-  if (url.includes("/technology/") || url.includes("/tech/"))
-    return "TECHNOLOGY";
-  if (url.includes("/sports/")) return "SPORTS";
-  if (url.includes("/health/")) return "HEALTH";
-  if (url.includes("/education/")) return "EDUCATION";
-  if (url.includes("/entertainment/")) return "ENTERTAINMENT";
-  if (url.includes("/international/")) return "INTERNATIONAL";
-  if (url.includes("/lifestyle/")) return "LIFESTYLE";
-  if (url.includes("/national/")) return "NATIONAL";
-  if (url.includes("/opinion/")) return "OPINION";
-  if (url.includes("/tourism/")) return "BUSINESS";
-
-  if (article.publisher?.toLowerCase().includes("share")) return "MERO_SHARE";
-
-  return "GENERAL";
+  search?: string;
 }
 
 export async function fetchNews(
@@ -45,12 +13,19 @@ export async function fetchNews(
 ): Promise<ApiArticle[]> {
   const queryParams = new URLSearchParams();
 
+  // Handle category filter
   if (filters.category && filters.category !== "all") {
     queryParams.append("category", filters.category.toUpperCase());
   }
 
+  // Handle publisher filter
   if (filters.publisher) {
     queryParams.append("publisher", filters.publisher);
+  }
+
+  // Handle search query
+  if (filters.search && filters.search.trim()) {
+    queryParams.append("search", filters.search.trim());
   }
 
   const url = `${API_BASE_URL}/api/news${
@@ -67,25 +42,31 @@ export async function fetchNews(
     });
 
     if (!response.ok) {
+      console.error(`API call failed with status: ${response.status}`);
+      const errorText = await response.text();
+      console.error("Error response:", errorText);
       throw new Error(`API call failed with status: ${response.status}`);
     }
 
     const data = await response.json();
 
+    if (!Array.isArray(data)) {
+      console.error("Invalid response format:", data);
+      return [];
+    }
+
     return data.map((article: any) => ({
-      ...article,
       id: article.id?.toString() || Math.random().toString(36).substr(2, 9),
-
-      category: article.category || inferCategoryFromArticle(article),
-
+      engHeading: article.engHeading || article.engTitle || "No Title",
+      nepaliHeading:
+        article.nepaliHeading || article.nepaliTitle || "शीर्षक छैन",
+      category: article.category || "GENERAL",
       engDescription: article.engDescription || "No description available.",
       nepaliDescription: article.nepaliDescription || "विवरण उपलब्ध छैन।",
-
       dateEnglish:
         article.dateEnglish || new Date().toISOString().split("T")[0],
       dateNepali: article.dateNepali || "",
       time: article.time || "",
-
       image_url: article.image_url || null,
       publisher: article.publisher || "Unknown",
       url: article.url || "#",
@@ -101,14 +82,38 @@ export async function getAvailableCategories(): Promise<string[]> {
   console.log("Fetching categories from:", url);
 
   try {
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
     if (!response.ok) {
       throw new Error(`API call failed with status: ${response.status}`);
     }
-    return await response.json();
+
+    const data = await response.json();
+    console.log("Categories received:", data);
+
+    return Array.isArray(data) ? data : ["GENERAL"];
   } catch (error) {
     console.error("Failed to get categories:", error);
-    return ["POLITICS", "BUSINESS", "TECHNOLOGY", "SPORTS", "GENERAL"];
+    // Return default categories if API fails
+    return [
+      "POLITICS",
+      "BUSINESS",
+      "TECHNOLOGY",
+      "SPORTS",
+      "HEALTH",
+      "EDUCATION",
+      "ENTERTAINMENT",
+      "INTERNATIONAL",
+      "LIFESTYLE",
+      "NATIONAL",
+      "OPINION",
+      "GENERAL",
+    ];
   }
 }
 
@@ -126,8 +131,8 @@ export function searchArticles(
       article.engDescription?.toLowerCase().includes(searchLower);
 
     const nepaliMatch =
-      article.nepaliHeading?.toLowerCase().includes(searchLower) ||
-      article.nepaliDescription?.toLowerCase().includes(searchLower);
+      article.nepaliHeading?.includes(query) ||
+      article.nepaliDescription?.includes(query);
 
     const metaMatch =
       article.publisher?.toLowerCase().includes(searchLower) ||
@@ -140,12 +145,25 @@ export function searchArticles(
 export function groupArticlesByCategory(
   articles: ApiArticle[]
 ): Record<string, ApiArticle[]> {
-  return articles.reduce((acc, article) => {
+  const grouped: Record<string, ApiArticle[]> = {};
+
+  articles.forEach((article) => {
     const category = article.category || "GENERAL";
-    if (!acc[category]) {
-      acc[category] = [];
+    if (!grouped[category]) {
+      grouped[category] = [];
     }
-    acc[category].push(article);
-    return acc;
-  }, {} as Record<string, ApiArticle[]>);
+    grouped[category].push(article);
+  });
+
+  // Sort articles within each category by date/time
+  Object.keys(grouped).forEach((category) => {
+    grouped[category].sort((a, b) => {
+      // Sort by date and time
+      const dateA = new Date(`${a.dateEnglish} ${a.time || "12:00 PM"}`);
+      const dateB = new Date(`${b.dateEnglish} ${b.time || "12:00 PM"}`);
+      return dateB.getTime() - dateA.getTime();
+    });
+  });
+
+  return grouped;
 }

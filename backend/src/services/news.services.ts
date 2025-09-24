@@ -4,6 +4,8 @@ import { Category, Prisma } from "../generated/prisma/client.js";
 interface FetchNewsFilters {
   category?: string | undefined;
   publisherName?: string | undefined;
+  searchQuery?: string | undefined;
+  limit?: number;
 }
 
 type NewsWithPublisher = Prisma.NewsGetPayload<{
@@ -21,6 +23,7 @@ function formatArticleForFrontend(news: NewsWithPublisher) {
     url: news.url,
     image_url: news.imageUrl,
     publisher: news.publisher.name,
+    category: news.category || Category.GENERAL,
     engDescription:
       news.englishDescription ||
       news.nepaliDescription ||
@@ -32,77 +35,93 @@ function formatArticleForFrontend(news: NewsWithPublisher) {
 
 export async function fetchNews(filters: FetchNewsFilters) {
   const whereClause: Prisma.NewsWhereInput = {};
-  const isCategoryFilterActive =
-    filters.category && filters.category.toUpperCase() in Category;
 
-  if (isCategoryFilterActive) {
-    whereClause.category = filters.category!.toUpperCase() as Category;
+  // Category filter
+  if (filters.category && filters.category.toUpperCase() in Category) {
+    whereClause.category = filters.category.toUpperCase() as Category;
+  }
+
+  // Publisher filter
+  if (filters.publisherName) {
+    whereClause.publisher = {
+      name: {
+        contains: filters.publisherName,
+        mode: "insensitive",
+      },
+    };
+  }
+
+  // Search filter
+  if (filters.searchQuery && filters.searchQuery.trim()) {
+    const searchTerm = filters.searchQuery.trim();
+    whereClause.OR = [
+      { nepaliTitle: { contains: searchTerm, mode: "insensitive" } },
+      { englishTitle: { contains: searchTerm, mode: "insensitive" } },
+      { nepaliDescription: { contains: searchTerm, mode: "insensitive" } },
+      { englishDescription: { contains: searchTerm, mode: "insensitive" } },
+      { publisher: { name: { contains: searchTerm, mode: "insensitive" } } },
+    ];
   }
 
   const allNews = await prisma.news.findMany({
-    where: {
-      ...whereClause,
-    },
+    where: whereClause,
     orderBy: {
       publishedAt: "desc",
     },
     include: {
       publisher: true,
     },
+    take: filters.limit || (filters.category ? 20 : 200), // Limit results
   });
 
-  if (isCategoryFilterActive) {
-    allNews.sort(
-      (a: NewsWithPublisher, b: NewsWithPublisher) =>
-        b.publishedAt!.getTime() - a.publishedAt!.getTime()
-    );
-    return allNews.slice(0, 20).map(formatArticleForFrontend); // Limit to 20 for specific
+  // If specific category is requested, return limited results
+  if (filters.category && filters.category !== "all") {
+    return allNews.slice(0, 20).map(formatArticleForFrontend);
   }
 
-  // For "all", group by category and limit to 15 latest per category
-  const groupedByCategory: Record<Category, NewsWithPublisher[]> = {} as Record<
-    Category,
-    NewsWithPublisher[]
-  >;
-  allNews.forEach((news) => {
-    const cat = news.category || Category.GENERAL;
-    if (!groupedByCategory[cat]) groupedByCategory[cat] = [];
-    groupedByCategory[cat].push(news);
-  });
+  // For "all" categories, group by category and limit each
+  if (!filters.searchQuery) {
+    const groupedByCategory: Record<Category, NewsWithPublisher[]> =
+      {} as Record<Category, NewsWithPublisher[]>;
 
-  // Sort each category by publishedAt and limit to 15
-  Object.keys(groupedByCategory).forEach((catKey) => {
-    const cat = catKey as Category;
-    groupedByCategory[cat].sort(
-      (a: NewsWithPublisher, b: NewsWithPublisher) =>
-        b.publishedAt!.getTime() - a.publishedAt!.getTime()
-    );
-    groupedByCategory[cat] = groupedByCategory[cat].slice(0, 15);
-  });
+    allNews.forEach((news) => {
+      const cat = news.category || Category.GENERAL;
+      if (!groupedByCategory[cat]) groupedByCategory[cat] = [];
+      if (groupedByCategory[cat].length < 15) {
+        // Limit to 15 per category
+        groupedByCategory[cat].push(news);
+      }
+    });
 
-  // Flatten all limited categories
-  const finalNews = Object.values(groupedByCategory).flat();
+    const finalNews = Object.values(groupedByCategory).flat();
+    return finalNews.map(formatArticleForFrontend);
+  }
 
-  return finalNews.map(formatArticleForFrontend);
+  // For search results, return all matching
+  return allNews.map(formatArticleForFrontend);
 }
 
 export async function fetchAvailableCategories() {
-  // Fetch all distinct categories without where clause to avoid type error
   const newsWithCategories = await prisma.news.findMany({
     distinct: ["category"],
     select: {
       category: true,
+    },
+    where: {
+      category: { not: null },
     },
     orderBy: {
       category: "asc",
     },
   });
 
-  // Filter null in JS to avoid Prisma type issue
   const categories = newsWithCategories
     .map((item) => item.category)
-    .filter((c): c is Category => c !== null)
-    .sort() || [Category.GENERAL];
+    .filter((c): c is Category => c !== null);
 
-  return categories;
+  return categories.length > 0 ? categories : [Category.GENERAL];
+}
+
+export async function searchNews(query: string, limit: number = 50) {
+  return fetchNews({ searchQuery: query, limit });
 }

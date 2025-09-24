@@ -6,33 +6,46 @@ interface FetchNewsFilters {
   publisherName?: string;
 }
 
-export const getNews = async (req: Request, res: Response) => {
+export async function getNews(req: Request, res: Response) {
   try {
-    const categoryQuery = req.query.category as string | undefined;
-    const publisherQuery = req.query.publisher as string | undefined;
-    const filters: FetchNewsFilters = {};
-    if (categoryQuery) {
-      filters.category = categoryQuery;
-    }
-    if (publisherQuery) {
-      filters.publisherName = publisherQuery;
-    }
-    const newsArticles = await newsService.fetchNews(filters);
-    res.status(200).json(newsArticles);
-  } catch (error) {
-    console.error("Failed to fetch news:", error);
-    res.status(500).json({ message: "An error occurred while fetching news." });
-  }
-};
+    const { category, publisher, search, limit } = req.query;
 
-export const getCategories = async (req: Request, res: Response) => {
+    // If search query is present, use search function
+    if (search && typeof search === "string") {
+      const results = await newsService.searchNews(
+        search,
+        limit ? parseInt(limit as string) : 50
+      );
+      return res.json(results);
+    }
+
+    // Otherwise use regular fetch with filters
+    const news = await newsService.fetchNews({
+      category: category as string | undefined,
+      publisherName: publisher as string | undefined,
+      searchQuery: search as string | undefined,
+      limit: limit ? parseInt(limit as string) : undefined,
+    });
+
+    res.json(news);
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    res.status(500).json({
+      error: "Failed to fetch news",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+}
+
+export async function getCategories(req: Request, res: Response) {
   try {
     const categories = await newsService.fetchAvailableCategories();
-    res.status(200).json(categories);
+    res.json(categories);
   } catch (error) {
-    console.error("Failed to fetch categories:", error);
-    res
-      .status(500)
-      .json({ message: "An error occurred while fetching categories." });
+    console.error("Error fetching categories:", error);
+    res.status(500).json({
+      error: "Failed to fetch categories",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
   }
-};
+}

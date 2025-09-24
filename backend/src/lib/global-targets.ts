@@ -25,6 +25,10 @@ export const onlineKhabarTargets = [
     category: Category.OPINION,
     url: "https://www.onlinekhabar.com/content/opinion",
   },
+  {
+    category: Category.INTERNATIONAL,
+    url: "https://www.onlinekhabar.com/content/international",
+  },
 ];
 
 export const bbcTargets = [

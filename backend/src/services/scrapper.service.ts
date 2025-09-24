@@ -3,6 +3,7 @@ import type { Category, Publisher } from "../generated/prisma/index.js";
 import prisma from "../lib/prisma.js";
 import { SCRAPPER_JOBS } from "../scrappers/scrappers.config.js";
 import { adToNepaliDateString } from "../utils/adToNepaliConverter.js";
+
 export class ScrappingService {
   public async runAllScraps() {
     console.log("=====Running the scraps:=====");
@@ -21,8 +22,10 @@ export class ScrappingService {
       const categoryPromises = job.targets.map((target) =>
         this.scrapeAndProcessCategory(job, target, publisher)
       );
+      await Promise.all(categoryPromises);
     }
   }
+
   private async scrapeAndProcessCategory(
     job: any,
     target: any,
@@ -39,26 +42,30 @@ export class ScrappingService {
       return;
     }
 
+    // Transform articles with time distribution for BBC
     const newNewsData = this.transformArticles(
       rawArticles,
       category,
       publisher.id,
-      dateParser
+      dateParser,
+      publisher.name === "BBC Nepali" // Flag for BBC special handling
     );
 
     if (newNewsData.length > 0) {
       await this.replaceNewsInCategory(category, newNewsData, publisher.id);
     }
   }
+
   private transformArticles(
     articles: RawScrapedArticle[],
     category: Category,
     publisherId: string,
-    dateParser: (dateString: string | undefined) => Date | null
+    dateParser: (dateString: string | undefined) => Date | null,
+    isBBC: boolean = false
   ) {
     return articles
-      .map((article) => {
-        const publishedAt = dateParser(article.nepaliDateString);
+      .map((article, index) => {
+        let publishedAt = dateParser(article.nepaliDateString);
         if (!publishedAt) {
           console.warn(
             `Could not parse date "${article.nepaliDateString}" for article: ${article.title}`
@@ -66,10 +73,32 @@ export class ScrappingService {
           return null;
         }
 
+        // For BBC articles that only have date (not exact time), distribute times
+        if (
+          isBBC &&
+          publishedAt.getHours() === 12 &&
+          publishedAt.getMinutes() === 0
+        ) {
+          // Distribute BBC articles throughout the day
+          // Start from 8 AM and distribute every 2 hours
+          const hoursDistribution = [8, 10, 12, 14, 16, 18, 20, 22];
+          const hourIndex = index % hoursDistribution.length;
+          const minutesOffset = Math.floor(Math.random() * 60); // Random minutes
+
+          publishedAt = new Date(publishedAt);
+          publishedAt.setHours(
+            hoursDistribution[hourIndex],
+            minutesOffset,
+            0,
+            0
+          );
+        }
+
         const nepaliDateFull = adToNepaliDateString(publishedAt);
         const dateNepaliPart = nepaliDateFull
           ? nepaliDateFull.split(" गते")[0]
           : "अज्ञात मिति";
+
         return {
           nepaliTitle: article.title,
           nepaliDescription: article.description,
@@ -89,6 +118,7 @@ export class ScrappingService {
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
   }
+
   private async replaceNewsInCategory(
     category: Category,
     newsData: any[],
@@ -99,7 +129,9 @@ export class ScrappingService {
         prisma.news.deleteMany({ where: { publisherId, category } }),
         prisma.news.createMany({ data: newsData, skipDuplicates: true }),
       ]);
-      console.log(`Successfully replaced data for ${category}.`);
+      console.log(
+        `Successfully replaced ${newsData.length} articles for ${category}.`
+      );
     } catch (error) {
       console.error(`Transaction failed for category ${category}:`, error);
     }
