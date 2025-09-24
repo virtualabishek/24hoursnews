@@ -73,21 +73,18 @@ export class ScrappingService {
           return null;
         }
 
-        // For BBC articles that only have date (not exact time), distribute times
         if (
           isBBC &&
           publishedAt.getHours() === 12 &&
           publishedAt.getMinutes() === 0
         ) {
-          // Distribute BBC articles throughout the day
-          // Start from 8 AM and distribute every 2 hours
           const hoursDistribution = [8, 10, 12, 14, 16, 18, 20, 22];
           const hourIndex = index % hoursDistribution.length;
-          const minutesOffset = Math.floor(Math.random() * 60); // Random minutes
+          const minutesOffset = Math.floor(Math.random() * 60);
 
           publishedAt = new Date(publishedAt);
           publishedAt.setHours(
-            hoursDistribution[hourIndex],
+            hoursDistribution[hourIndex] ?? 8,
             minutesOffset,
             0,
             0

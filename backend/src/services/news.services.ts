@@ -46,7 +46,6 @@ export async function fetchNews(filters: FetchNewsFilters) {
     whereClause.publisher = {
       name: {
         contains: filters.publisherName,
-        mode: "insensitive",
       },
     };
   }
@@ -55,11 +54,11 @@ export async function fetchNews(filters: FetchNewsFilters) {
   if (filters.searchQuery && filters.searchQuery.trim()) {
     const searchTerm = filters.searchQuery.trim();
     whereClause.OR = [
-      { nepaliTitle: { contains: searchTerm, mode: "insensitive" } },
-      { englishTitle: { contains: searchTerm, mode: "insensitive" } },
-      { nepaliDescription: { contains: searchTerm, mode: "insensitive" } },
-      { englishDescription: { contains: searchTerm, mode: "insensitive" } },
-      { publisher: { name: { contains: searchTerm, mode: "insensitive" } } },
+      { nepaliTitle: { contains: searchTerm } },
+      { englishTitle: { contains: searchTerm } },
+      { nepaliDescription: { contains: searchTerm } },
+      { englishDescription: { contains: searchTerm } },
+      { publisher: { name: { contains: searchTerm } } },
     ];
   }
 
@@ -108,7 +107,7 @@ export async function fetchAvailableCategories() {
       category: true,
     },
     where: {
-      category: { not: null },
+      category: { notIn: [] },
     },
     orderBy: {
       category: "asc",
