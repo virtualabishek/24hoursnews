@@ -26,6 +26,7 @@ function NewsHomePage() {
       setIsLoading(true);
       try {
         const articles = await fetchNews({});
+        console.log("Initial articles loaded:", articles.length);
         setAllArticles(articles);
       } catch (error) {
         console.error("Error loading news:", error);
@@ -42,26 +43,6 @@ function NewsHomePage() {
     getAvailableCategories().then(setAvailableTopics);
   }, []);
 
-  // Fetch filtered news when category changes
-  useEffect(() => {
-    if (selectedCategory !== "all") {
-      const loadFilteredNews = async () => {
-        setIsLoading(true);
-        try {
-          const articles = await fetchNews({ category: selectedCategory });
-          setAllArticles(articles);
-        } catch (error) {
-          console.error("Error loading filtered news:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      loadFilteredNews();
-    }
-  }, [selectedCategory]);
-
-  const filteredArticles = allArticles;
-
   const carouselsToDisplay = useMemo(() => {
     const grouped = groupArticlesByCategory(allArticles);
     return Object.entries(grouped).map(([topicKey, articles]) => ({
@@ -73,40 +54,50 @@ function NewsHomePage() {
   const handleSearch = useCallback(
     async (query: string) => {
       setSearchQuery(query);
-      if (query.trim()) {
-        setIsLoading(true);
-        try {
-          const articles = await fetchNews({ search: query });
-          setAllArticles(articles);
-        } catch (error) {
-          console.error("Search error:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        // Reset to show all articles when search is cleared
-        const articles = await fetchNews({ category: selectedCategory });
+
+      // Don't do anything if query is empty - let category filter handle it
+      if (!query.trim()) {
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Search with current category filter
+        const articles = await fetchNews({
+          category: selectedCategory === "all" ? undefined : selectedCategory,
+          search: query,
+        });
+        console.log("Search results:", articles.length);
         setAllArticles(articles);
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setIsLoading(false);
       }
     },
     [selectedCategory]
   );
 
   const handleCategoryFilter = useCallback(async (category: string) => {
+    console.log("Category filter clicked:", category);
     setSelectedCategory(category);
-    setSearchQuery("");
+    setSearchQuery(""); // Clear search when changing category
     setIsLoading(true);
     try {
+      // When "all" is selected, don't pass any category filter
       const articles = await fetchNews({
         category: category === "all" ? undefined : category,
       });
+      console.log(`Articles for category "${category}":`, articles.length);
       setAllArticles(articles);
     } catch (error) {
       console.error("Error loading filtered news:", error);
+      setAllArticles([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
   const totalArticlesFound = useMemo(() => allArticles.length, [allArticles]);
 
   return (
@@ -145,7 +136,10 @@ function NewsHomePage() {
         <div className="space-y-8 sm:space-y-12 lg:space-y-16">
           {isLoading ? (
             <div className="text-center py-20">
-              <p className="text-lg font-semibold">{t("common.loading")}</p>
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+              <p className="text-lg font-semibold mt-4">
+                {t("common.loading")}
+              </p>
             </div>
           ) : carouselsToDisplay.length === 0 ? (
             <div className="text-center py-12 sm:py-16 lg:py-20">
@@ -176,37 +170,39 @@ function NewsHomePage() {
           )}
         </div>
 
-        {(searchQuery || selectedCategory !== "all") && !isLoading && (
-          <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border border-border backdrop-blur-sm">
-            <div className="text-center space-y-2">
-              {searchQuery && (
-                <p className="text-sm sm:text-base text-muted-foreground">
+        {(searchQuery || selectedCategory !== "all") &&
+          !isLoading &&
+          totalArticlesFound > 0 && (
+            <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border border-border backdrop-blur-sm">
+              <div className="text-center space-y-2">
+                {searchQuery && (
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    {language === "en"
+                      ? `Search results for "${searchQuery}"`
+                      : `"${searchQuery}" का लागि खोज परिणामहरू`}
+                  </p>
+                )}
+                {selectedCategory !== "all" && (
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    {language === "en"
+                      ? `Filtered by category: ${getTopicName(
+                          selectedCategory as TopicKey,
+                          language
+                        )}`
+                      : `श्रेणी अनुसार फिल्टर गरिएको: ${getTopicName(
+                          selectedCategory as TopicKey,
+                          language
+                        )}`}
+                  </p>
+                )}
+                <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                   {language === "en"
-                    ? `Search results for "${searchQuery}"`
-                    : `"${searchQuery}" का लागि खोज परिणामहरू`}
+                    ? `${totalArticlesFound} articles found`
+                    : `${totalArticlesFound} लेखहरू फेला परे`}
                 </p>
-              )}
-              {selectedCategory !== "all" && (
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  {language === "en"
-                    ? `Filtered by category: ${getTopicName(
-                        selectedCategory as TopicKey,
-                        language
-                      )}`
-                    : `श्रेणी अनुसार फिल्टर गरिएको: ${getTopicName(
-                        selectedCategory as TopicKey,
-                        language
-                      )}`}
-                </p>
-              )}
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-                {language === "en"
-                  ? `${totalArticlesFound} articles found`
-                  : `${totalArticlesFound} लेखहरू फेला परे`}
-              </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </main>
 
       <Footer />

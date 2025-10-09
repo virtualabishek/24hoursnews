@@ -13,20 +13,25 @@ export async function fetchNews(
 ): Promise<ApiArticle[]> {
   const queryParams = new URLSearchParams();
 
-  // Handle category filter
-  if (filters.category && filters.category !== "all") {
+  // Handle category filter - only add if it exists and is not "all" or undefined
+  if (
+    filters.category &&
+    filters.category !== "all" &&
+    filters.category !== ""
+  ) {
     queryParams.append("category", filters.category.toUpperCase());
   }
 
   // Handle publisher filter
-  if (filters.publisher) {
+  if (
+    filters.publisher &&
+    filters.publisher !== "all" &&
+    filters.publisher !== ""
+  ) {
     queryParams.append("publisher", filters.publisher);
   }
 
-  // Handle search query
-  if (filters.search && filters.search.trim()) {
-    queryParams.append("search", filters.search.trim());
-  }
+  // Search is handled client-side, not sent to API
 
   const url = `${API_BASE_URL}/api/news${
     queryParams.toString() ? "?" + queryParams.toString() : ""
@@ -55,7 +60,7 @@ export async function fetchNews(
       return [];
     }
 
-    return data.map((article: any) => ({
+    let articles = data.map((article: any) => ({
       id: article.id?.toString() || Math.random().toString(36).substr(2, 9),
       engHeading: article.engHeading || article.engTitle || "No Title",
       nepaliHeading:
@@ -71,6 +76,13 @@ export async function fetchNews(
       publisher: article.publisher || "Unknown",
       url: article.url || "#",
     }));
+
+    // Apply client-side search filter if search query exists
+    if (filters.search && filters.search.trim()) {
+      articles = searchArticles(articles, filters.search);
+    }
+
+    return articles;
   } catch (error) {
     console.error("Failed to fetch news:", error);
     return [];
@@ -155,10 +167,8 @@ export function groupArticlesByCategory(
     grouped[category].push(article);
   });
 
-  // Sort articles within each category by date/time
   Object.keys(grouped).forEach((category) => {
     grouped[category].sort((a, b) => {
-      // Sort by date and time
       const dateA = new Date(`${a.dateEnglish} ${a.time || "12:00 PM"}`);
       const dateB = new Date(`${b.dateEnglish} ${b.time || "12:00 PM"}`);
       return dateB.getTime() - dateA.getTime();

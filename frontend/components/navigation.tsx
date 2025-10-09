@@ -48,7 +48,10 @@ export function Navigation({
   }, []);
 
   useEffect(() => {
-    onSearch(debouncedSearchQuery);
+    // Only trigger search if there's actually a query to search for
+    if (debouncedSearchQuery.trim()) {
+      onSearch(debouncedSearchQuery);
+    }
   }, [debouncedSearchQuery, onSearch]);
 
   useEffect(() => {
@@ -85,6 +88,13 @@ export function Navigation({
 
   const handleSearchFocus = () => {
     setShowSuggestions(true);
+  };
+
+  const handleCategoryClick = (category: string) => {
+    console.log("Category clicked:", category);
+    // Clear search when changing categories
+    setSearchQuery("");
+    onCategoryFilter(category);
   };
 
   const toggleTheme = () => {
@@ -151,21 +161,18 @@ export function Navigation({
             {/* Category Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="min-w-[140px] justify-between bg-transparent hover:bg-muted/50 transition-colors duration-300"
-                >
+                <button className="inline-flex items-center justify-between min-w-[140px] h-10 px-4 py-2 text-sm font-medium rounded-md border border-input bg-transparent hover:bg-muted/50 transition-colors duration-300">
                   <span className="truncate">
                     {selectedCategory === "all"
                       ? t("navigation.allCategories")
                       : getTopicName(selectedCategory as TopicKey, language)}
                   </span>
                   <Filter className="w-4 h-4 ml-2 flex-shrink-0" />
-                </Button>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem
-                  onClick={() => onCategoryFilter("all")}
+                  onClick={() => handleCategoryClick("all")}
                   className={selectedCategory === "all" ? "bg-primary/10" : ""}
                 >
                   {t("navigation.allCategories")}
@@ -173,7 +180,7 @@ export function Navigation({
                 {topics.map((topicKey) => (
                   <DropdownMenuItem
                     key={topicKey}
-                    onClick={() => onCategoryFilter(topicKey)}
+                    onClick={() => handleCategoryClick(topicKey)}
                     className={
                       selectedCategory === topicKey ? "bg-primary/10" : ""
                     }
@@ -281,7 +288,7 @@ export function Navigation({
                 <Button
                   variant={selectedCategory === "all" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => onCategoryFilter("all")}
+                  onClick={() => handleCategoryClick("all")}
                   className="justify-start text-left"
                 >
                   {t("navigation.allCategories")}
@@ -293,7 +300,7 @@ export function Navigation({
                       selectedCategory === topicKey ? "default" : "outline"
                     }
                     size="sm"
-                    onClick={() => onCategoryFilter(topicKey)}
+                    onClick={() => handleCategoryClick(topicKey)}
                     className="justify-start text-left text-xs sm:text-sm"
                   >
                     {getTopicName(topicKey, language)}

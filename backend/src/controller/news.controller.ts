@@ -1,31 +1,45 @@
 import type { Request, Response } from "express";
 import * as newsService from "../services/news.services.js";
 
-interface FetchNewsFilters {
-  category?: string;
-  publisherName?: string;
-}
-
 export async function getNews(req: Request, res: Response) {
   try {
     const { category, publisher, search, limit } = req.query;
 
+    // Parse limit if provided
+    const parsedLimit = limit ? parseInt(limit as string) : undefined;
+
     // If search query is present, use search function
     if (search && typeof search === "string") {
-      const results = await newsService.searchNews(
-        search,
-        limit ? parseInt(limit as string) : 50
-      );
+      const results = await newsService.searchNews(search, parsedLimit || 50);
       return res.json(results);
     }
 
-    // Otherwise use regular fetch with filters
-    const news = await newsService.fetchNews({
-      category: category as string | undefined,
-      publisherName: publisher as string | undefined,
-      searchQuery: search as string | undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-    });
+    // Build filters object properly
+    const filters: {
+      category?: string;
+      publisherName?: string;
+      searchQuery?: string;
+      limit?: number;
+    } = {};
+
+    if (category && typeof category === "string") {
+      filters.category = category;
+    }
+
+    if (publisher && typeof publisher === "string") {
+      filters.publisherName = publisher;
+    }
+
+    if (search && typeof search === "string") {
+      filters.searchQuery = search;
+    }
+
+    if (parsedLimit !== undefined && !isNaN(parsedLimit)) {
+      filters.limit = parsedLimit;
+    }
+
+    // Fetch news with filters
+    const news = await newsService.fetchNews(filters);
 
     res.json(news);
   } catch (error) {
