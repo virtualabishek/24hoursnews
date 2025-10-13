@@ -1,6 +1,4 @@
-import NepaliDateConverter from "nepali-date-converter";
-
-const NepaliDate = NepaliDateConverter.default || NepaliDateConverter;
+import { bsToAd } from "@sbmdkl/nepali-date-converter";
 
 const nepaliMonthMap = {
   वैशाख: 1,
@@ -24,7 +22,7 @@ function normalizeNepaliDigits(str) {
   );
 }
 
-export function parseOnlineKhabarDate(dateString) {
+export function parseRatopatiDate(dateString) {
   try {
     if (!dateString || typeof dateString !== "string") {
       console.warn("Invalid dateString received:", dateString);
@@ -33,8 +31,9 @@ export function parseOnlineKhabarDate(dateString) {
 
     const cleanedDateString = dateString.replace(/\s+/g, " ").trim();
 
+    // Regex for Ratopati format: "DayName, Day Month Year, HH : MM"
     const regex =
-      /^(\p{Nd}{4})\s+([^\s]+)\s+(\p{Nd}{1,2})\s+गते\s+(\p{Nd}{2}:\p{Nd}{2})$/u;
+      /^([^\s,]+),\s*([\p{Nd}]+)\s+([^\s]+)\s+([\p{Nd}]+),\s*([\p{Nd}]{2})\s*:\s*([\p{Nd}]{2})$/u;
     const match = cleanedDateString.match(regex);
 
     if (!match) {
@@ -42,12 +41,13 @@ export function parseOnlineKhabarDate(dateString) {
       return null;
     }
 
-    const [, yearStr, monthName, dayStr, timeStr] = match;
+    const [, dayName, dayStr, monthName, yearStr, hoursStr, minutesStr] = match;
 
     // Normalize digits to ASCII for parseInt
     const normalizedYear = normalizeNepaliDigits(yearStr);
     const normalizedDay = normalizeNepaliDigits(dayStr);
-    const normalizedTime = normalizeNepaliDigits(timeStr);
+    const normalizedHours = normalizeNepaliDigits(hoursStr);
+    const normalizedMinutes = normalizeNepaliDigits(minutesStr);
 
     const bsYear = parseInt(normalizedYear, 10);
     const bsDay = parseInt(normalizedDay, 10);
@@ -60,16 +60,17 @@ export function parseOnlineKhabarDate(dateString) {
       return null;
     }
 
-    const nepaliDate = new NepaliDate(bsYear, bsMonth, bsDay);
-    const adDate = nepaliDate.toJsDate();
+    const bsDateStr = `${bsYear}-${String(bsMonth).padStart(2, "0")}-${String(
+      bsDay
+    ).padStart(2, "0")}`;
 
-    // Parse time
-    const [hoursStr, minutesStr] = normalizedTime.split(":");
-    const hours = parseInt(hoursStr, 10) || 0;
-    const minutes = parseInt(minutesStr, 10) || 0;
+    const adDateStr = bsToAd(bsDateStr);
+    const adDate = new Date(adDateStr);
+
+    const hours = parseInt(normalizedHours, 10) || 0;
+    const minutes = parseInt(normalizedMinutes, 10) || 0;
     adDate.setHours(hours, minutes, 0, 0);
 
-    // Validate the resulting date
     if (isNaN(adDate.getTime())) {
       console.warn(`Invalid Gregorian date generated for: ${dateString}`);
       return null;

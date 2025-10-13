@@ -57,3 +57,14 @@ export const setopatiTargets = [
   { category: Category.SPORTS, url: "https://www.setopati.com/sports" },
   { category: Category.INTERNATIONAL, url: "https://www.setopati.com/global" },
 ];
+
+export const ratopatiTargets = [
+  {
+    category: Category.ENTERTAINMENT,
+    url: "https://www.ratopati.com/category/entertainment",
+  },
+  {
+    category: Category.HEALTH,
+    url: "https://www.ratopati.com/category/health",
+  },
+];

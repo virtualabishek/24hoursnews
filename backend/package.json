@@ -17,6 +17,7 @@
   "packageManager": "pnpm@10.16.1",
   "dependencies": {
     "@prisma/client": "^6.16.2",
+    "@sbmdkl/nepali-date-converter": "^2.0.4",
     "@types/node-cron": "^3.0.11",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",

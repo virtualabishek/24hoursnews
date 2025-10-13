@@ -5,16 +5,13 @@ export async function getNews(req: Request, res: Response) {
   try {
     const { category, publisher, search, limit } = req.query;
 
-    // Parse limit if provided
     const parsedLimit = limit ? parseInt(limit as string) : undefined;
 
-    // If search query is present, use search function
     if (search && typeof search === "string") {
       const results = await newsService.searchNews(search, parsedLimit || 50);
       return res.json(results);
     }
 
-    // Build filters object properly
     const filters: {
       category?: string;
       publisherName?: string;

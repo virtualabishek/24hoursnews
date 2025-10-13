@@ -30,6 +30,7 @@ function formatArticleForFrontend(news: NewsWithPublisher) {
       "No description available.",
     nepaliDescription:
       news.nepaliDescription || news.englishDescription || "विवरण उपलब्ध छैन।",
+    publishedAt: news.publishedAt?.toISOString() || null,
   };
 }
 
@@ -65,12 +66,12 @@ export async function fetchNews(filters: FetchNewsFilters) {
   const allNews = await prisma.news.findMany({
     where: whereClause,
     orderBy: {
-      publishedAt: "desc",
+      publishedAt: "desc", // Sort by publishedAt (most recent first)
     },
     include: {
       publisher: true,
     },
-    take: filters.limit || (filters.category ? 20 : 200), // Limit results
+    take: filters.limit || (filters.category ? 20 : 200),
   });
 
   // If specific category is requested, return limited results
@@ -87,7 +88,6 @@ export async function fetchNews(filters: FetchNewsFilters) {
       const cat = news.category || Category.GENERAL;
       if (!groupedByCategory[cat]) groupedByCategory[cat] = [];
       if (groupedByCategory[cat].length < 15) {
-        // Limit to 15 per category
         groupedByCategory[cat].push(news);
       }
     });

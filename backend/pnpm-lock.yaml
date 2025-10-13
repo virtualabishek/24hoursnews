@@ -11,6 +11,9 @@ importers:
       '@prisma/client':
         specifier: ^6.16.2
         version: 6.16.2(prisma@6.16.2(typescript@5.9.2))(typescript@5.9.2)
+      '@sbmdkl/nepali-date-converter':
+        specifier: ^2.0.4
+        version: 2.0.4
       '@types/node-cron':
         specifier: ^3.0.11
         version: 3.0.11
@@ -333,6 +336,9 @@ packages:
     resolution: {integrity: sha512-3ZG500+ZeLql8rE0hjfhkycJjDj0pI/btEh3L9IkWUYcOrgP0xCNRq3HbtbqOPbvDhFaAWD88pDFtlLv8ns8gA==}
     engines: {node: '>=18'}
     hasBin: true
+
+  '@sbmdkl/nepali-date-converter@2.0.4':
+    resolution: {integrity: sha512-yg+Lu1Hdem4LPeKXQOKWzeBwGAaBz6A3PY4KyUlJzehszbuFQQv0i3FNXcUKp1bf7k2CyuwigXoIG7QExqTxow==}
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
@@ -1779,6 +1785,8 @@ snapshots:
       - bare-buffer
       - react-native-b4a
       - supports-color
+
+  '@sbmdkl/nepali-date-converter@2.0.4': {}
 
   '@standard-schema/spec@1.0.0': {}
 
