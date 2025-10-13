@@ -60,11 +60,15 @@ export const setopatiTargets = [
 
 export const ratopatiTargets = [
   {
+    category: Category.HEALTH,
+    url: "https://www.ratopati.com/category/health",
+  },
+  {
     category: Category.ENTERTAINMENT,
     url: "https://www.ratopati.com/category/entertainment",
   },
   {
-    category: Category.HEALTH,
-    url: "https://www.ratopati.com/category/health",
+    category: Category.SPORTS,
+    url: "https://www.ratopati.com/category/sports",
   },
 ];

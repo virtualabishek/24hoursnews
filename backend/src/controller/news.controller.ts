@@ -35,7 +35,6 @@ export async function getNews(req: Request, res: Response) {
       filters.limit = parsedLimit;
     }
 
-    // Fetch news with filters
     const news = await newsService.fetchNews(filters);
 
     res.json(news);
