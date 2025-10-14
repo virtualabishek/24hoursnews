@@ -20,13 +20,19 @@ function NewsHomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [availableTopics, setAvailableTopics] = useState<TopicKey[]>([]);
 
-  // Fetch all news on initial load
   useEffect(() => {
     const loadNews = async () => {
       setIsLoading(true);
       try {
         const articles = await fetchNews({});
         console.log("Initial articles loaded:", articles.length);
+        if (articles.length > 0) {
+          console.log("First article publishedAt:", articles[0].publishedAt);
+          console.log(
+            "Last article publishedAt:",
+            articles[articles.length - 1].publishedAt
+          );
+        }
         setAllArticles(articles);
       } catch (error) {
         console.error("Error loading news:", error);
@@ -38,7 +44,6 @@ function NewsHomePage() {
     loadNews();
   }, []);
 
-  // Fetch categories for navigation
   useEffect(() => {
     getAvailableCategories().then(setAvailableTopics);
   }, []);
@@ -55,22 +60,17 @@ function NewsHomePage() {
     async (query: string) => {
       setSearchQuery(query);
 
-      // Don't do anything if query is empty - let category filter handle it
-      if (!query.trim()) {
-        return;
-      }
-
       setIsLoading(true);
       try {
-        // Search with current category filter
         const articles = await fetchNews({
           category: selectedCategory === "all" ? undefined : selectedCategory,
-          search: query,
+          search: query.trim() || undefined,
         });
         console.log("Search results:", articles.length);
         setAllArticles(articles);
       } catch (error) {
         console.error("Search error:", error);
+        setAllArticles([]);
       } finally {
         setIsLoading(false);
       }
@@ -81,10 +81,9 @@ function NewsHomePage() {
   const handleCategoryFilter = useCallback(async (category: string) => {
     console.log("Category filter clicked:", category);
     setSelectedCategory(category);
-    setSearchQuery(""); // Clear search when changing category
+    setSearchQuery("");
     setIsLoading(true);
     try {
-      // When "all" is selected, don't pass any category filter
       const articles = await fetchNews({
         category: category === "all" ? undefined : category,
       });

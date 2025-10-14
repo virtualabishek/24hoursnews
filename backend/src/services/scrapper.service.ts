@@ -48,7 +48,7 @@ export class ScrappingService {
       category,
       publisher.id,
       dateParser,
-      publisher.name === "BBC Nepali" // Flag for BBC special handling
+      publisher.name === "BBC Nepali" 
     );
 
     if (newNewsData.length > 0) {

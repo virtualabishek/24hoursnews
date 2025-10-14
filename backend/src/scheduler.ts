@@ -5,7 +5,7 @@ export const startSchedulers = () => {
   if (process.env.NODE_ENV === "production") {
     console.log("Production environment detected. Scheduling cron jobs.");
     cron.schedule(
-      "0 6,18 * * *",
+      "0 */3 * * *",
       () => {
         console.log("Running scheduled scrape job (6 AM/6 PM)...");
         const scrapingService = new ScrappingService();

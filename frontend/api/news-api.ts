@@ -13,7 +13,6 @@ export async function fetchNews(
 ): Promise<ApiArticle[]> {
   const queryParams = new URLSearchParams();
 
-  // Handle category filter - only add if it exists and is not "all" or undefined
   if (
     filters.category &&
     filters.category !== "all" &&
@@ -22,7 +21,6 @@ export async function fetchNews(
     queryParams.append("category", filters.category.toUpperCase());
   }
 
-  // Handle publisher filter
   if (
     filters.publisher &&
     filters.publisher !== "all" &&
@@ -31,7 +29,9 @@ export async function fetchNews(
     queryParams.append("publisher", filters.publisher);
   }
 
-  // Search is handled client-side, not sent to API
+  if (filters.search && filters.search.trim()) {
+    queryParams.append("search", filters.search.trim());
+  }
 
   const url = `${API_BASE_URL}/api/news${
     queryParams.toString() ? "?" + queryParams.toString() : ""
@@ -41,9 +41,7 @@ export async function fetchNews(
   try {
     const response = await fetch(url, {
       cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     });
 
     if (!response.ok) {
@@ -60,7 +58,8 @@ export async function fetchNews(
       return [];
     }
 
-    let articles = data.map((article: any) => ({
+    // Map the response to ensure all fields are present
+    const articles = data.map((article: any) => ({
       id: article.id?.toString() || Math.random().toString(36).substr(2, 9),
       engHeading: article.engHeading || article.engTitle || "No Title",
       nepaliHeading:
@@ -75,13 +74,12 @@ export async function fetchNews(
       image_url: article.image_url || null,
       publisher: article.publisher || "Unknown",
       url: article.url || "#",
+      publishedAt:
+        article.publishedAt || article.dateEnglish || new Date().toISOString(),
     }));
 
-    // Apply client-side search filter if search query exists
-    if (filters.search && filters.search.trim()) {
-      articles = searchArticles(articles, filters.search);
-    }
-
+    // Backend already sorts by publishedAt desc, so no need to sort again
+    console.log(`Fetched ${articles.length} articles`);
     return articles;
   } catch (error) {
     console.error("Failed to fetch news:", error);
@@ -96,9 +94,7 @@ export async function getAvailableCategories(): Promise<string[]> {
   try {
     const response = await fetch(url, {
       cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     });
 
     if (!response.ok) {
@@ -111,7 +107,6 @@ export async function getAvailableCategories(): Promise<string[]> {
     return Array.isArray(data) ? data : ["GENERAL"];
   } catch (error) {
     console.error("Failed to get categories:", error);
-    // Return default categories if API fails
     return [
       "POLITICS",
       "BUSINESS",
@@ -158,21 +153,15 @@ export function groupArticlesByCategory(
   articles: ApiArticle[]
 ): Record<string, ApiArticle[]> {
   const grouped: Record<string, ApiArticle[]> = {};
-
   articles.forEach((article) => {
     const category = article.category || "GENERAL";
     if (!grouped[category]) {
       grouped[category] = [];
     }
-    grouped[category].push(article);
-  });
 
-  Object.keys(grouped).forEach((category) => {
-    grouped[category].sort((a, b) => {
-      const dateA = new Date(`${a.dateEnglish} ${a.time || "12:00 PM"}`);
-      const dateB = new Date(`${b.dateEnglish} ${b.time || "12:00 PM"}`);
-      return dateB.getTime() - dateA.getTime();
-    });
+    if (grouped[category].length < 15) {
+      grouped[category].push(article);
+    }
   });
 
   return grouped;

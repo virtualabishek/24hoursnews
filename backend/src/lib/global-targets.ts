@@ -71,4 +71,8 @@ export const ratopatiTargets = [
     category: Category.SPORTS,
     url: "https://www.ratopati.com/category/sports",
   },
+  {
+    category: Category.INTERNATIONAL,
+    url: "https://www.ratopati.com/category/international",
+  },
 ];

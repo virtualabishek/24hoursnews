@@ -16,6 +16,7 @@ export enum Category {
 }
 
 export interface ApiArticle {
+  publishedAt: string;
   id: string;
   engHeading: string;
   nepaliHeading: string;

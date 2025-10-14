@@ -30,19 +30,20 @@ function formatArticleForFrontend(news: NewsWithPublisher) {
       "No description available.",
     nepaliDescription:
       news.nepaliDescription || news.englishDescription || "विवरण उपलब्ध छैन।",
-    publishedAt: news.publishedAt?.toISOString() || null,
+    publishedAt:
+      news.publishedAt?.toISOString() ||
+      news.dateEnglish ||
+      new Date().toISOString(),
   };
 }
 
 export async function fetchNews(filters: FetchNewsFilters) {
   const whereClause: Prisma.NewsWhereInput = {};
 
-  // Category filter
   if (filters.category && filters.category.toUpperCase() in Category) {
     whereClause.category = filters.category.toUpperCase() as Category;
   }
 
-  // Publisher filter
   if (filters.publisherName) {
     whereClause.publisher = {
       name: {
@@ -51,7 +52,6 @@ export async function fetchNews(filters: FetchNewsFilters) {
     };
   }
 
-  // Search filter
   if (filters.searchQuery && filters.searchQuery.trim()) {
     const searchTerm = filters.searchQuery.trim();
     whereClause.OR = [
@@ -63,40 +63,23 @@ export async function fetchNews(filters: FetchNewsFilters) {
     ];
   }
 
+  // SIMPLE: Just fetch and sort by time, let frontend handle grouping
   const allNews = await prisma.news.findMany({
     where: whereClause,
-    orderBy: {
-      publishedAt: "desc", // Sort by publishedAt (most recent first)
-    },
+    orderBy: [
+      {
+        publishedAt: "desc", // Most recent first
+      },
+      {
+        id: "desc", // Tie-breaker
+      },
+    ],
     include: {
       publisher: true,
     },
-    take: filters.limit || (filters.category ? 20 : 200),
+    take: filters.limit || 200,
   });
 
-  // If specific category is requested, return limited results
-  if (filters.category && filters.category !== "all") {
-    return allNews.slice(0, 20).map(formatArticleForFrontend);
-  }
-
-  // For "all" categories, group by category and limit each
-  if (!filters.searchQuery) {
-    const groupedByCategory: Record<Category, NewsWithPublisher[]> =
-      {} as Record<Category, NewsWithPublisher[]>;
-
-    allNews.forEach((news) => {
-      const cat = news.category || Category.GENERAL;
-      if (!groupedByCategory[cat]) groupedByCategory[cat] = [];
-      if (groupedByCategory[cat].length < 15) {
-        groupedByCategory[cat].push(news);
-      }
-    });
-
-    const finalNews = Object.values(groupedByCategory).flat();
-    return finalNews.map(formatArticleForFrontend);
-  }
-
-  // For search results, return all matching
   return allNews.map(formatArticleForFrontend);
 }
 
