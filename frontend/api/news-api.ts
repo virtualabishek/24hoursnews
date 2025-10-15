@@ -152,13 +152,21 @@ export function groupArticlesByCategory(
   articles: ApiArticle[]
 ): Record<string, ApiArticle[]> {
   const grouped: Record<string, ApiArticle[]> = {};
-
   articles.forEach((article) => {
     const category = article.category || "GENERAL";
     if (!grouped[category]) {
       grouped[category] = [];
     }
     grouped[category].push(article);
+  });
+
+  // Sort each category's articles by publishedAt (newest first)
+  Object.keys(grouped).forEach((category) => {
+    grouped[category].sort((a, b) => {
+      return (
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+    });
   });
 
   return grouped;
