@@ -37,10 +37,12 @@ function formatArticleForFrontend(news: NewsWithPublisher) {
 export async function fetchNews(filters: FetchNewsFilters) {
   const whereClause: Prisma.NewsWhereInput = {};
 
+  // Handle category filter
   if (filters.category && filters.category.toUpperCase() in Category) {
     whereClause.category = filters.category.toUpperCase() as Category;
   }
 
+  // Handle publisher filter
   if (filters.publisherName) {
     whereClause.publisher = {
       name: {
@@ -49,15 +51,29 @@ export async function fetchNews(filters: FetchNewsFilters) {
     };
   }
 
+  // Handle search query - search in multiple fields including category
   if (filters.searchQuery && filters.searchQuery.trim()) {
     const searchTerm = filters.searchQuery.trim();
-    whereClause.OR = [
+
+    // Check if search term matches a category (case-insensitive)
+    const categoryMatch = Object.values(Category).find(
+      (cat) => cat.toLowerCase() === searchTerm.toLowerCase()
+    );
+
+    const orConditions: Prisma.NewsWhereInput[] = [
       { nepaliTitle: { contains: searchTerm } },
       { englishTitle: { contains: searchTerm } },
       { nepaliDescription: { contains: searchTerm } },
       { englishDescription: { contains: searchTerm } },
       { publisher: { name: { contains: searchTerm } } },
     ];
+
+    // If search term matches a category, add it to the OR conditions
+    if (categoryMatch) {
+      orConditions.push({ category: categoryMatch });
+    }
+
+    whereClause.OR = orConditions;
   }
 
   const allNews = await prisma.news.findMany({

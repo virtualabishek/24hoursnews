@@ -1,6 +1,6 @@
 import { ApiArticle } from "@/lib/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = "http://localhost:8000";
 
 interface FetchFilters {
   category?: string;
@@ -30,6 +30,7 @@ export async function fetchNews(
   }
 
   if (filters.search && filters.search.trim()) {
+    // Send search query as-is, backend will handle it
     queryParams.append("search", filters.search.trim());
   }
 
@@ -151,15 +152,13 @@ export function groupArticlesByCategory(
   articles: ApiArticle[]
 ): Record<string, ApiArticle[]> {
   const grouped: Record<string, ApiArticle[]> = {};
+
   articles.forEach((article) => {
     const category = article.category || "GENERAL";
     if (!grouped[category]) {
       grouped[category] = [];
     }
-
-    if (grouped[category].length < 15) {
-      grouped[category].push(article);
-    }
+    grouped[category].push(article);
   });
 
   return grouped;
