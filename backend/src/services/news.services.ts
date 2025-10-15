@@ -30,10 +30,7 @@ function formatArticleForFrontend(news: NewsWithPublisher) {
       "No description available.",
     nepaliDescription:
       news.nepaliDescription || news.englishDescription || "विवरण उपलब्ध छैन।",
-    publishedAt:
-      news.publishedAt?.toISOString() ||
-      news.dateEnglish ||
-      new Date().toISOString(),
+    publishedAt: news.publishedAt?.toISOString() || new Date().toISOString(),
   };
 }
 
@@ -63,17 +60,11 @@ export async function fetchNews(filters: FetchNewsFilters) {
     ];
   }
 
-  // SIMPLE: Just fetch and sort by time, let frontend handle grouping
   const allNews = await prisma.news.findMany({
     where: whereClause,
-    orderBy: [
-      {
-        publishedAt: "desc", // Most recent first
-      },
-      {
-        id: "desc", // Tie-breaker
-      },
-    ],
+    orderBy: {
+      publishedAt: "desc",
+    },
     include: {
       publisher: true,
     },

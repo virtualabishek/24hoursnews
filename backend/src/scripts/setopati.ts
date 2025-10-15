@@ -1,7 +1,7 @@
 import axios from "axios";
 import { JSDOM } from "jsdom";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
-
+const SCRAPE_LIMIT = 15;
 export class SetopatiScraper {
   public async scrapeCategory(url: string): Promise<RawScrapedArticle[]> {
     try {
@@ -18,12 +18,12 @@ export class SetopatiScraper {
 
       const newsItems = doc.querySelectorAll(".row.bishesh .items");
       console.log(`Found ${newsItems.length} news items for ${url}`);
+      const limitedNewsItems = Array.from(newsItems).slice(0, SCRAPE_LIMIT);
+
       const newsData: RawScrapedArticle[] = [];
 
-      for (let i = 0; i < Math.min(6, newsItems.length); i++) {
-        const item = newsItems[i];
+      for (const item of limitedNewsItems) {
         if (!item) {
-          console.warn(`Item ${i} is null`);
           continue;
         }
 
@@ -38,7 +38,7 @@ export class SetopatiScraper {
           !imageElement ||
           !timeStampElement
         ) {
-          console.warn(`Missing elements for item ${i}:`, {
+          console.warn(`Missing elements for item :`, {
             link: !!linkElement,
             title: !!titleElement,
             image: !!imageElement,
@@ -49,7 +49,7 @@ export class SetopatiScraper {
 
         const articleUrl = linkElement.getAttribute("href");
         if (!articleUrl) {
-          console.warn(`No href for item ${i}`);
+          console.warn(`No href for item`);
           continue;
         }
 

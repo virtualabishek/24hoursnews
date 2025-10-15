@@ -17,6 +17,7 @@ import { useLanguage } from "@/contexts/language-context";
 import { getTopicName, type TopicKey } from "@/lib/assets";
 import { useDebounce } from "@/hooks/use-debounce";
 import { ApiArticle } from "@/lib/types";
+import { cn } from "@/lib/utils"; // Import your cn utility
 
 interface NavigationProps {
   onSearch: (query: string) => void;
@@ -48,7 +49,6 @@ export function Navigation({
   }, []);
 
   useEffect(() => {
-    // Only trigger search if there's actually a query to search for
     if (debouncedSearchQuery.trim()) {
       onSearch(debouncedSearchQuery);
     }
@@ -63,7 +63,6 @@ export function Navigation({
         setShowSuggestions(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -91,8 +90,6 @@ export function Navigation({
   };
 
   const handleCategoryClick = (category: string) => {
-    console.log("Category clicked:", category);
-    // Clear search when changing categories
     setSearchQuery("");
     onCategoryFilter(category);
   };
@@ -105,25 +102,24 @@ export function Navigation({
     setLanguage(language === "en" ? "np" : "en");
   };
 
-  // Prevent hydration mismatch
   if (!mounted) {
     return null;
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 border-b border-border shadow-sm">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-14 sm:h-16">
+        <div className="flex h-14 items-center justify-between sm:h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2 min-w-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-xs">🇳🇵</span>
+          <div className="flex min-w-0 items-center space-x-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-blue-600 shadow-md">
+              <span className="text-xs font-bold text-white">🇳🇵</span>
             </div>
-            <div className="hidden sm:block min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
+            <div className="hidden min-w-0 sm:block">
+              <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">
                 24 Hours News
               </h1>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="truncate text-xs text-muted-foreground">
                 {language === "en"
                   ? "Latest News in English & Nepali"
                   : "अंग्रेजी र नेपालीमा ताजा समाचार"}
@@ -132,18 +128,18 @@ export function Navigation({
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4 flex-1 max-w-2xl mx-8">
-            {/* Search Bar with Suggestions */}
-            <div ref={searchRef} className="flex-1 relative">
+          <div className="mx-8 hidden max-w-2xl flex-1 items-center space-x-4 lg:flex">
+            {/* Search Bar */}
+            <div ref={searchRef} className="relative flex-1">
               <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
+                <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder={t("navigation.search")}
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onFocus={handleSearchFocus}
-                  className="pl-10 pr-4 w-full focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+                  className="w-full pl-10 pr-4 transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                 />
               </form>
               <SearchSuggestions
@@ -161,19 +157,20 @@ export function Navigation({
             {/* Category Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="inline-flex items-center justify-between min-w-[140px] h-10 px-4 py-2 text-sm font-medium rounded-md border border-input bg-transparent hover:bg-muted/50 transition-colors duration-300">
+                {/* UPDATED: Added proper hover classes */}
+                <button className="inline-flex h-10 min-w-[140px] items-center justify-between rounded-md border border-input bg-transparent px-4 py-2 text-sm font-medium transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
                   <span className="truncate">
                     {selectedCategory === "all"
                       ? t("navigation.allCategories")
                       : getTopicName(selectedCategory as TopicKey, language)}
                   </span>
-                  <Filter className="w-4 h-4 ml-2 flex-shrink-0" />
+                  <Filter className="ml-2 h-4 w-4 flex-shrink-0" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem
                   onClick={() => handleCategoryClick("all")}
-                  className={selectedCategory === "all" ? "bg-primary/10" : ""}
+                  className={cn(selectedCategory === "all" && "bg-accent")}
                 >
                   {t("navigation.allCategories")}
                 </DropdownMenuItem>
@@ -181,9 +178,7 @@ export function Navigation({
                   <DropdownMenuItem
                     key={topicKey}
                     onClick={() => handleCategoryClick(topicKey)}
-                    className={
-                      selectedCategory === topicKey ? "bg-primary/10" : ""
-                    }
+                    className={cn(selectedCategory === topicKey && "bg-accent")}
                   >
                     {getTopicName(topicKey, language)}
                   </DropdownMenuItem>
@@ -198,7 +193,8 @@ export function Navigation({
               variant="ghost"
               size="sm"
               onClick={toggleLanguage}
-              className="hidden sm:flex hover:bg-muted/50 transition-colors duration-300 min-w-[60px] justify-center"
+              // UPDATED: Replaced hover:bg-muted/50 with hover:bg-accent and hover:text-accent-foreground
+              className="hidden min-w-[60px] justify-center transition-colors duration-300 hover:bg-accent hover:text-accent-foreground sm:flex"
               title={
                 language === "en" ? "Switch to Nepali" : "Switch to English"
               }
@@ -206,7 +202,7 @@ export function Navigation({
               {language === "en" ? (
                 <div className="flex items-center space-x-1">
                   <span className="text-sm">🇳🇵</span>
-                  <span className="text-xs font-medium">नेप</span>
+                  <span className="font-nepali text-xs font-medium">नेप</span>
                 </div>
               ) : (
                 <div className="flex items-center space-x-1">
@@ -220,7 +216,8 @@ export function Navigation({
               variant="ghost"
               size="sm"
               onClick={toggleTheme}
-              className="hover:bg-muted/50 transition-colors duration-300 min-w-[40px] justify-center"
+              // UPDATED: Replaced hover:bg-muted/50 with hover:bg-accent and hover:text-accent-foreground
+              className="min-w-[40px] justify-center transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
               title={
                 theme === "dark"
                   ? "Switch to light mode"
@@ -239,13 +236,14 @@ export function Navigation({
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden hover:bg-muted/50 transition-colors duration-300"
+              // UPDATED: Replaced hover:bg-muted/50 with hover:bg-accent and hover:text-accent-foreground
+              className="transition-colors duration-300 hover:bg-accent hover:text-accent-foreground lg:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? (
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               ) : (
-                <Menu className="w-5 h-5" />
+                <Menu className="h-5 w-5" />
               )}
             </Button>
           </div>

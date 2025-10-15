@@ -42,13 +42,12 @@ export class ScrappingService {
       return;
     }
 
-    // Transform articles with time distribution for BBC
     const newNewsData = this.transformArticles(
       rawArticles,
       category,
       publisher.id,
       dateParser,
-      publisher.name === "BBC Nepali" 
+      publisher.name === "BBC Nepali"
     );
 
     if (newNewsData.length > 0) {

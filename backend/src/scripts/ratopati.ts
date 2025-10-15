@@ -3,6 +3,8 @@ import { JSDOM } from "jsdom";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
 import type { IScraper } from "../scrappers/scrappers.interface.js";
 
+const SCRAPE_LIMIT = 15;
+
 export class RatopatiScraper implements IScraper {
   public async scrapeCategory(url: string): Promise<RawScrapedArticle[]> {
     try {
@@ -15,42 +17,47 @@ export class RatopatiScraper implements IScraper {
       });
       const dom = new JSDOM(response.data);
       const doc = dom.window.document;
-      const newsItems = doc.querySelectorAll(
-        ".dn-container .dn-grid .columnnews"
-      );
+      const newsItems = doc.querySelectorAll(".default-news .columnnews");
+
       console.log(`Found ${newsItems.length} news items for ${url}`);
+      const limitedNewsItems = Array.from(newsItems).slice(0, SCRAPE_LIMIT);
+
       const newsData: RawScrapedArticle[] = [];
-      for (let i = 0; i < Math.min(7, newsItems.length); i++) {
-        const item = newsItems[i];
+      for (const item of limitedNewsItems) {
         if (!item) {
-          console.warn(`Item ${i} is null`);
+          console.warn(`Skipping an invalid item.`);
           continue;
         }
-        const titleElement = item.querySelector(".columnnews-wrap h3");
         const linkElement = item.querySelector("a");
         const imageElement = item.querySelector("img");
+        const titleElement = item.querySelector(".columnnews-wrap h3");
+
         if (!titleElement || !linkElement || !imageElement) {
-          console.warn(`Missing elements for item ${i}:`, {
+          console.warn(`Missing elements for an item:`, {
             title: !!titleElement,
             link: !!linkElement,
             image: !!imageElement,
           });
           continue;
         }
+
         const articleUrl = linkElement.getAttribute("href");
         if (!articleUrl) {
-          console.warn(`No url for item ${i}`);
+          console.warn(`No url for an item`);
           continue;
         }
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
         const articleDetails = await this.scrapeArticleDetails(articleUrl);
+
         if (articleDetails) {
           newsData.push({
             title: titleElement.textContent?.trim() || "No title",
             link: articleUrl,
             image:
-              imageElement.getAttribute("src") ||
               imageElement.getAttribute("data-src") ||
+              imageElement.getAttribute("src") ||
               "No image",
             description: articleDetails.description,
             nepaliDateString: articleDetails.date,
@@ -81,7 +88,6 @@ export class RatopatiScraper implements IScraper {
       const dom = new JSDOM(response.data);
       const doc = dom.window.document;
 
-      // Selectors for description: first paragraph in the-content
       const descSelectors = [
         ".the-content p",
         ".news-contentarea p",
@@ -96,7 +102,6 @@ export class RatopatiScraper implements IScraper {
         }
       }
 
-      // Date and time from post-hour span
       const date =
         doc.querySelector(".post-hour span")?.textContent?.trim() || "No date";
 

@@ -58,7 +58,6 @@ export async function fetchNews(
       return [];
     }
 
-    // Map the response to ensure all fields are present
     const articles = data.map((article: any) => ({
       id: article.id?.toString() || Math.random().toString(36).substr(2, 9),
       engHeading: article.engHeading || article.engTitle || "No Title",
@@ -78,7 +77,6 @@ export async function fetchNews(
         article.publishedAt || article.dateEnglish || new Date().toISOString(),
     }));
 
-    // Backend already sorts by publishedAt desc, so no need to sort again
     console.log(`Fetched ${articles.length} articles`);
     return articles;
   } catch (error) {
