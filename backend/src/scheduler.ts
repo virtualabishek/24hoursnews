@@ -1,13 +1,16 @@
 import cron from "node-cron";
 import { ScrappingService } from "./services/scrapper.service.js";
+import { cleanupOldArticles } from "./services/cleanup.service.js";
 
 export const startSchedulers = () => {
   if (process.env.NODE_ENV === "production") {
     console.log("Production environment detected. Scheduling cron jobs.");
     cron.schedule(
       "0 */3 * * *",
-      () => {
+      async () => {
         console.log("Running scheduled scrape job (6 AM/6 PM)...");
+        console.log("Running daily cleanup...");
+        await cleanupOldArticles(30);
         const scrapingService = new ScrappingService();
         scrapingService.runAllScraps().catch((error) => {
           console.error("Scheduled scrape failed:", error);

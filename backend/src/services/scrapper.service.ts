@@ -121,12 +121,23 @@ export class ScrappingService {
     publisherId: string
   ) {
     try {
+      const daysToKeep = 7;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
       await prisma.$transaction([
-        prisma.news.deleteMany({ where: { publisherId, category } }),
+        prisma.news.deleteMany({
+          where: {
+            publisherId,
+            category,
+            publishedAt: { lt: cutoffDate },
+          },
+        }),
         prisma.news.createMany({ data: newsData, skipDuplicates: true }),
       ]);
+
       console.log(
-        `Successfully replaced ${newsData.length} articles for ${category}.`
+        `Cleaned up old articles and added ${newsData.length} new articles for ${category}.`
       );
     } catch (error) {
       console.error(`Transaction failed for category ${category}:`, error);
