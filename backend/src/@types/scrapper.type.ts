@@ -1,4 +1,4 @@
-import type { Category } from "../generated/prisma/index.js";
+import type { Category } from "../../lib/generated/prisma/client.js";
 import type { IScraper } from "../scrappers/scrappers.interface.js";
 
 export interface RawScrapedArticle {

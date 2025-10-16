@@ -2,9 +2,9 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
-  binaryTargets = ["native", "debian-openssl-1.0.x"]
-
+  binaryTargets = ["native",  "rhel-openssl-1.0.x"]
 }
+
 
 datasource db {
   provider = "mysql"

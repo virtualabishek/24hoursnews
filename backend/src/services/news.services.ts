@@ -1,5 +1,5 @@
 import prisma from "../lib/prisma.js";
-import { Category, Prisma } from "../generated/prisma/client.js";
+import { Category, Prisma } from "../../lib/generated/prisma/client.js";
 
 interface FetchNewsFilters {
   category?: string | undefined;
@@ -106,20 +106,14 @@ export async function fetchNews(filters: FetchNewsFilters) {
 export async function fetchAvailableCategories() {
   const newsWithCategories = await prisma.news.findMany({
     distinct: ["category"],
-    select: {
-      category: true,
-    },
-    where: {
-      category: { notIn: [] },
-    },
-    orderBy: {
-      category: "asc",
-    },
+    select: { category: true },
+    where: { category: { notIn: [] } },
+    orderBy: { category: "asc" },
   });
 
   const categories = newsWithCategories
-    .map((item) => item.category)
-    .filter((c): c is Category => c !== null);
+    .map((item: { category: Category | null }) => item.category)
+    .filter((c: Category | null): c is Category => c !== null);
 
   return categories.length > 0 ? categories : [Category.GENERAL];
 }
