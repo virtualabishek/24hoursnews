@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" aria-label="24Hour News Nepal Logo">
+  <defs>
+    <!-- Clean linear gradient -->
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#dc2626" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+
+    <!-- Smooth drop shadow -->
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="rgba(0,0,0,0.35)" />
+    </filter>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect x="32" y="32" width="192" height="192" rx="36" fill="url(#gradient)" filter="url(#shadow)" />
+
+  <!-- Centered text -->
+  <text
+    x="128"
+    y="164"
+    font-family="Poppins, Arial, sans-serif"
+    font-size="108"
+    font-weight="900"
+    fill="#ffffff"
+    text-anchor="middle"
+    letter-spacing="2"
+  >
+    24
+  </text>
+
+ 
+</svg>

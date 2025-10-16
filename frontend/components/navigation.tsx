@@ -17,7 +17,8 @@ import { useLanguage } from "@/contexts/language-context";
 import { getTopicName, type TopicKey } from "@/lib/assets";
 import { useDebounce } from "@/hooks/use-debounce";
 import { ApiArticle } from "@/lib/types";
-import { cn } from "@/lib/utils"; // Import your cn utility
+import { cn } from "@/lib/utils";
+import { Logo } from "./logo";
 
 interface NavigationProps {
   onSearch: (query: string) => void;
@@ -111,20 +112,8 @@ export function Navigation({
       <div className="container mx-auto px-4">
         <div className="flex h-14 items-center justify-between sm:h-16">
           {/* Logo */}
-          <div className="flex min-w-0 items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-blue-600 shadow-md">
-              <span className="text-xs font-bold text-white">🇳🇵</span>
-            </div>
-            <div className="hidden min-w-0 sm:block">
-              <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">
-                24 Hours News
-              </h1>
-              <p className="truncate text-xs text-muted-foreground">
-                {language === "en"
-                  ? "Latest News in English & Nepali"
-                  : "अंग्रेजी र नेपालीमा ताजा समाचार"}
-              </p>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Logo />
           </div>
 
           {/* Desktop Navigation */}
@@ -193,7 +182,6 @@ export function Navigation({
               variant="ghost"
               size="sm"
               onClick={toggleLanguage}
-              // UPDATED: Replaced hover:bg-muted/50 with hover:bg-accent and hover:text-accent-foreground
               className="hidden min-w-[60px] justify-center transition-colors duration-300 hover:bg-accent hover:text-accent-foreground sm:flex"
               title={
                 language === "en" ? "Switch to Nepali" : "Switch to English"
@@ -216,7 +204,6 @@ export function Navigation({
               variant="ghost"
               size="sm"
               onClick={toggleTheme}
-              // UPDATED: Replaced hover:bg-muted/50 with hover:bg-accent and hover:text-accent-foreground
               className="min-w-[40px] justify-center transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
               title={
                 theme === "dark"
@@ -236,7 +223,6 @@ export function Navigation({
             <Button
               variant="ghost"
               size="sm"
-              // UPDATED: Replaced hover:bg-muted/50 with hover:bg-accent and hover:text-accent-foreground
               className="transition-colors duration-300 hover:bg-accent hover:text-accent-foreground lg:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
@@ -252,7 +238,6 @@ export function Navigation({
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="lg:hidden py-4 border-t border-border animate-in slide-in-from-top-2 duration-300">
-            {/* Mobile Search with Suggestions */}
             <div ref={searchRef} className="mb-4 relative">
               <form onSubmit={handleSearch} className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />

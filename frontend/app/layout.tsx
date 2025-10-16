@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   description:
     "Stay updated with the latest news from Nepal in both English and Nepali languages. Breaking news, politics, sports, technology, and more.",
   creator: "Abishek Neupane - AstaVision Infosys Team",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
