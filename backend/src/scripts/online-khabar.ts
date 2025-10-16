@@ -3,6 +3,8 @@ import { JSDOM } from "jsdom";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
 import type { IScraper } from "../scrappers/scrappers.interface.js";
 
+const SCRAPE_LIMIT = 15;
+
 export class OnlineKhabarScraper implements IScraper {
   public async scrapeCategory(url: string): Promise<RawScrapedArticle[]> {
     try {
@@ -13,14 +15,16 @@ export class OnlineKhabarScraper implements IScraper {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         },
       });
-
       const dom = new JSDOM(response.data);
       const doc = dom.window.document;
 
       const newsItems = doc.querySelectorAll(
         ".ok-col-left .ok-grid-12 .ok-news-post"
       );
-      console.log(`Found ${newsItems.length} news items for ${url}`);
+      console.log(`Found ${newsItems.length} total news items for ${url}`);
+
+      const limitedNewsItems = Array.from(newsItems).slice(0, SCRAPE_LIMIT);
+
       const newsData: RawScrapedArticle[] = [];
 
       for (let i = 0; i < Math.min(7, newsItems.length); i++) {
@@ -46,7 +50,6 @@ export class OnlineKhabarScraper implements IScraper {
           });
           continue;
         }
-
         const articleUrl = linkElement.getAttribute("href");
         if (!articleUrl) {
           console.warn(`No href for item ${i}`);
@@ -70,7 +73,9 @@ export class OnlineKhabarScraper implements IScraper {
         }
       }
 
-      console.log(`Scraped ${newsData.length} articles for ${url}`);
+      console.log(
+        `Scraped ${newsData.length} articles for ${url} (limit was ${SCRAPE_LIMIT})`
+      );
       return newsData;
     } catch (error) {
       console.error(`Error scraping category ${url}:`, error);
@@ -92,7 +97,6 @@ export class OnlineKhabarScraper implements IScraper {
       const dom = new JSDOM(response.data);
       const doc = dom.window.document;
 
-      // Improved description selector with fallbacks (common for Online Khabar articles)
       const descSelectors = [
         ".ok-article-content p",
         ".ok-article-body p",

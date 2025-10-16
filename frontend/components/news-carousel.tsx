@@ -58,6 +58,8 @@ export function NewsCarousel({ articles, title, topicKey }: NewsCarouselProps) {
   }
   const showHotIcon = topicKey === "POLITICS";
 
+  console.log(`Rendering ${articles.length} articles for ${title}`); // Place the log here
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Section Header */}

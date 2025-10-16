@@ -56,6 +56,8 @@ export const setopatiTargets = [
   { category: Category.OPINION, url: "https://www.setopati.com/opinion" },
   { category: Category.SPORTS, url: "https://www.setopati.com/sports" },
   { category: Category.INTERNATIONAL, url: "https://www.setopati.com/global" },
+  { category: Category.NATIONAL, url: "https://www.setopati.com/social" },
+  { category: Category.ENTERTAINMENT, url: "https://www.setopati.com/art" },
 ];
 
 export const ratopatiTargets = [
@@ -74,5 +76,33 @@ export const ratopatiTargets = [
   {
     category: Category.INTERNATIONAL,
     url: "https://www.ratopati.com/category/international",
+  },
+  {
+    category: Category.TECHNOLOGY,
+    url: "https://www.ratopati.com/category/science-technology",
+  },
+  {
+    category: Category.BUSINESS,
+    url: "https://www.ratopati.com/category/economy",
+  },
+  {
+    category: Category.SPORTS,
+    url: "https://www.ratopati.com/category/sports",
+  },
+  {
+    category: Category.EDUCATION,
+    url: "https://www.ratopati.com/category/education",
+  },
+  {
+    category: Category.MERO_SHARE,
+    url: "https://www.ratopati.com/category/share-market",
+  },
+  {
+    category: Category.OPINION,
+    url: "https://www.ratopati.com/category/opinion",
+  },
+  {
+    category: Category.TRENDING,
+    url: "https://www.ratopati.com/category/ratopati-special",
   },
 ];

@@ -1,7 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Suspense } from "react";
 import "./globals.css";
@@ -17,7 +16,10 @@ export const metadata: Metadata = {
   title: "24 Hours News - Latest News in English & Nepali",
   description:
     "Stay updated with the latest news from Nepal in both English and Nepali languages. Breaking news, politics, sports, technology, and more.",
-  generator: "v0.app",
+  creator: "Abishek Neupane - AstaVision Infosys Team",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -33,13 +35,12 @@ export default function RootLayout({
             attribute="class"
             defaultTheme="light"
             enableSystem={false}
-            disableTransitionOnChange={false}
+            disableTransitionOnChange={true}
             storageKey="theme"
           >
             {children}
           </ThemeProvider>
         </Suspense>
-        <Analytics />
       </body>
     </html>
   );

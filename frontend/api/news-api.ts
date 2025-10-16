@@ -1,6 +1,6 @@
 import { ApiArticle } from "@/lib/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = "http://localhost:8000";
 
 interface FetchFilters {
   category?: string;
@@ -30,6 +30,7 @@ export async function fetchNews(
   }
 
   if (filters.search && filters.search.trim()) {
+    // Send search query as-is, backend will handle it
     queryParams.append("search", filters.search.trim());
   }
 
@@ -58,7 +59,6 @@ export async function fetchNews(
       return [];
     }
 
-    // Map the response to ensure all fields are present
     const articles = data.map((article: any) => ({
       id: article.id?.toString() || Math.random().toString(36).substr(2, 9),
       engHeading: article.engHeading || article.engTitle || "No Title",
@@ -78,7 +78,6 @@ export async function fetchNews(
         article.publishedAt || article.dateEnglish || new Date().toISOString(),
     }));
 
-    // Backend already sorts by publishedAt desc, so no need to sort again
     console.log(`Fetched ${articles.length} articles`);
     return articles;
   } catch (error) {
@@ -158,10 +157,16 @@ export function groupArticlesByCategory(
     if (!grouped[category]) {
       grouped[category] = [];
     }
+    grouped[category].push(article);
+  });
 
-    if (grouped[category].length < 15) {
-      grouped[category].push(article);
-    }
+  // Sort each category's articles by publishedAt (newest first)
+  Object.keys(grouped).forEach((category) => {
+    grouped[category].sort((a, b) => {
+      return (
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+    });
   });
 
   return grouped;

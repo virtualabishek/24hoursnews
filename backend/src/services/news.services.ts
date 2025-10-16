@@ -30,59 +30,79 @@ function formatArticleForFrontend(news: NewsWithPublisher) {
       "No description available.",
     nepaliDescription:
       news.nepaliDescription || news.englishDescription || "विवरण उपलब्ध छैन।",
-    publishedAt:
-      news.publishedAt?.toISOString() ||
-      news.dateEnglish ||
-      new Date().toISOString(),
+    publishedAt: news.publishedAt?.toISOString() || new Date().toISOString(),
   };
 }
 
 export async function fetchNews(filters: FetchNewsFilters) {
-  const whereClause: Prisma.NewsWhereInput = {};
+  const { category, publisherName, searchQuery, limit } = filters;
 
-  if (filters.category && filters.category.toUpperCase() in Category) {
-    whereClause.category = filters.category.toUpperCase() as Category;
-  }
+  if (searchQuery) {
+    const searchTerm = searchQuery.trim();
 
-  if (filters.publisherName) {
-    whereClause.publisher = {
-      name: {
-        contains: filters.publisherName,
-      },
+    const categoryMatch = Object.values(Category).find((cat) =>
+      cat.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const where: Prisma.NewsWhereInput = {
+      OR: [
+        { nepaliTitle: { contains: searchTerm } },
+        { englishTitle: { contains: searchTerm } },
+        { nepaliDescription: { contains: searchTerm } },
+        { englishDescription: { contains: searchTerm } },
+        { publisher: { name: { contains: searchTerm } } },
+      ],
     };
+    if (categoryMatch) {
+      where.OR?.push({ category: categoryMatch });
+    }
+
+    if (category && category.toUpperCase() in Category) {
+      where.category = category.toUpperCase() as Category;
+    }
+
+    const news = await prisma.news.findMany({
+      where,
+      orderBy: { publishedAt: "desc" },
+      include: { publisher: true },
+      take: limit || 100,
+    });
+    return news.map(formatArticleForFrontend);
   }
 
-  if (filters.searchQuery && filters.searchQuery.trim()) {
-    const searchTerm = filters.searchQuery.trim();
-    whereClause.OR = [
-      { nepaliTitle: { contains: searchTerm } },
-      { englishTitle: { contains: searchTerm } },
-      { nepaliDescription: { contains: searchTerm } },
-      { englishDescription: { contains: searchTerm } },
-      { publisher: { name: { contains: searchTerm } } },
-    ];
+  if (category) {
+    const whereClause: Prisma.NewsWhereInput = {
+      category: category.toUpperCase() as Category,
+    };
+    const news = await prisma.news.findMany({
+      where: whereClause,
+      orderBy: { publishedAt: "desc" },
+      include: { publisher: true },
+      take: limit || 200,
+    });
+    return news.map(formatArticleForFrontend);
   }
 
-  // SIMPLE: Just fetch and sort by time, let frontend handle grouping
-  const allNews = await prisma.news.findMany({
-    where: whereClause,
-    orderBy: [
-      {
-        publishedAt: "desc", // Most recent first
-      },
-      {
-        id: "desc", // Tie-breaker
-      },
-    ],
-    include: {
-      publisher: true,
-    },
-    take: filters.limit || 200,
-  });
+  console.log("Fetching top articles for each category for the homepage...");
+  const categories = await fetchAvailableCategories();
+  const articlesPerCategory = 15;
+  let allCategorizedNews: NewsWithPublisher[] = [];
 
-  return allNews.map(formatArticleForFrontend);
+  for (const cat of categories) {
+    const newsInCategory = await prisma.news.findMany({
+      where: { category: cat },
+      orderBy: { publishedAt: "desc" },
+      include: { publisher: true },
+      take: articlesPerCategory,
+    });
+    allCategorizedNews.push(...newsInCategory);
+  }
+  allCategorizedNews.sort(
+    (a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0)
+  );
+
+  return allCategorizedNews.map(formatArticleForFrontend);
 }
-
 export async function fetchAvailableCategories() {
   const newsWithCategories = await prisma.news.findMany({
     distinct: ["category"],

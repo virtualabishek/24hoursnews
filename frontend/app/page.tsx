@@ -50,10 +50,23 @@ function NewsHomePage() {
 
   const carouselsToDisplay = useMemo(() => {
     const grouped = groupArticlesByCategory(allArticles);
-    return Object.entries(grouped).map(([topicKey, articles]) => ({
-      topicKey: topicKey as TopicKey,
-      articles,
-    }));
+
+    const unsortedCarousels = Object.entries(grouped).map(
+      ([topicKey, articles]) => ({
+        topicKey: topicKey as TopicKey,
+        articles,
+      })
+    );
+
+    const sortedCarousels = unsortedCarousels.sort((carouselA, carouselB) => {
+      const newestArticleA = carouselA.articles[0];
+      const newestArticleB = carouselB.articles[0];
+      const timeA = new Date(newestArticleA.publishedAt).getTime();
+      const timeB = new Date(newestArticleB.publishedAt).getTime();
+      return timeB - timeA;
+    });
+
+    return sortedCarousels;
   }, [allArticles]);
 
   const handleSearch = useCallback(
