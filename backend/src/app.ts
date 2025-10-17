@@ -5,7 +5,7 @@ import NewsRouter from "./routes/news.route.js";
 
 const app: Express = express();
 
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = ["http://news.bhagawatin.com.np"];
 
 const corsOptions: cors.CorsOptions = {
   origin: allowedOrigins,
