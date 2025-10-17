@@ -1,6 +1,6 @@
 import { ApiArticle } from "@/lib/types";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://newsapi.bhagawatin.com.np";
 
 interface FetchFilters {
   category?: string;
@@ -37,7 +37,6 @@ export async function fetchNews(
   const url = `${API_BASE_URL}/api/news${
     queryParams.toString() ? "?" + queryParams.toString() : ""
   }`;
-  console.log("Fetching from URL:", url);
 
   try {
     const response = await fetch(url, {
@@ -88,7 +87,6 @@ export async function fetchNews(
 
 export async function getAvailableCategories(): Promise<string[]> {
   const url = `${API_BASE_URL}/api/news/categories`;
-  console.log("Fetching categories from:", url);
 
   try {
     const response = await fetch(url, {
