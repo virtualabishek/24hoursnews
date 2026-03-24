@@ -23,6 +23,8 @@ interface Localization {
   };
   footer: {
     madeBy: string;
+    author: string;
+    at: string;
     company: string;
     allRightsReserved: string;
   };
@@ -66,7 +68,9 @@ export function getLocalization(language: Language = "en"): Localization {
     },
     footer: {
       madeBy: language === "en" ? "Made by" : "निर्माता",
-      company: "AstaVision Infosys",
+      author: language === "en" ? "Abishek Neupane" : "अभिषेक न्यौपाने",
+      at: language === "en" ? "at" : ",",
+      company: language === "en" ? "AstaVision Infosys" : "अस्तभिजन इन्फोसिस",
       allRightsReserved:
         language === "en" ? "All rights reserved." : "सबै अधिकार सुरक्षित।",
     },

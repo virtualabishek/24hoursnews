@@ -1,4 +1,4 @@
-import { Category } from "../generated/prisma/client.js";
+import { Category } from "../../lib/generated/prisma/client.js";
 
 export const onlineKhabarTargets = [
   {

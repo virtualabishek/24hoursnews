@@ -10,3 +10,4 @@ coverage
 logs
 *.log       
 /src/generated/prisma
+/lib

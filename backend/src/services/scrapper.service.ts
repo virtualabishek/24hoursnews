@@ -1,5 +1,5 @@
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
-import type { Category, Publisher } from "../generated/prisma/index.js";
+import type { Category, Publisher } from "../../lib/generated/prisma/client.js";
 import prisma from "../lib/prisma.js";
 import { SCRAPPER_JOBS } from "../scrappers/scrappers.config.js";
 import { adToNepaliDateString } from "../utils/adToNepaliConverter.js";
