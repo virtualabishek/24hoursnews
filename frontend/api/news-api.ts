@@ -34,9 +34,8 @@ export async function fetchNews(
     queryParams.append("search", filters.search.trim());
   }
 
-  const url = `${API_BASE_URL}/api/news${
-    queryParams.toString() ? "?" + queryParams.toString() : ""
-  }`;
+  const url = `${API_BASE_URL}/api/news${queryParams.toString() ? "?" + queryParams.toString() : ""
+    }`;
 
   try {
     const response = await fetch(url, {

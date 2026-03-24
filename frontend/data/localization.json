@@ -21,6 +21,8 @@
     },
     "footer": {
       "madeBy": "Made by",
+      "author": "Abishek Neupane",
+      "at": "at",
       "company": "AstaVision Infosys",
       "allRightsReserved": "All rights reserved."
     }
@@ -46,6 +48,8 @@
     },
     "footer": {
       "madeBy": "निर्माता",
+      "author": "अभिषेक न्यौपाने",
+      "at": ",",
       "company": "अस्तभिजन इन्फोसिस",
       "allRightsReserved": "सबै अधिकार सुरक्षित।"
     }

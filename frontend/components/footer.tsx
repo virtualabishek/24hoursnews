@@ -9,8 +9,17 @@ export function Footer() {
     <footer className="bg-card border-t border-border mt-16">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             <span>{t("footer.madeBy")}</span>
+            <a
+              href="https://abishekn.com.np"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              {t("footer.author")}
+            </a>
+            <span>{t("footer.at")}</span>
             <a
               href="https://www.astavisioninfosys.com/"
               target="_blank"
