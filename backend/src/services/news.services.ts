@@ -42,6 +42,7 @@ function formatArticleForFrontend(item: NewsWithPublisher) {
     url: item.url,
     image_url: item.imageUrl,
     publisher: item.publisher.name,
+    publisherLogo: item.publisher.logoUrl || null,
     category: item.category || Category.GENERAL,
     engDescription:
       item.englishDescription ||
