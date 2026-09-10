@@ -70,7 +70,6 @@ Edit the `.env` file with your database credentials:
 
 ```env
 DATABASE_URL="mysql://newsuser:yourpassword@localhost:3306/24hoursnews"
-SHADOW_DATABASE_URL="mysql://newsuser:yourpassword@localhost:3306/24hoursnews"
 NODE_ENV="development"
 PORT=3001
 ```
@@ -79,10 +78,10 @@ PORT=3001
 
 ```bash
 # Push schema to database
-pnpm prisma db push
+pnpm db:push
 
 # Seed initial data
-pnpm prisma db seed
+pnpm db:seed
 ```
 
 ### Step 5: Frontend Setup
