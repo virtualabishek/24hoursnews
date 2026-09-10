@@ -5,7 +5,10 @@ export async function getNews(req: Request, res: Response) {
   try {
     const { category, publisher, search, limit } = req.query;
 
-    const parsedLimit = limit ? parseInt(limit as string) : undefined;
+    // Clamp: positive int, max 100 — prevents huge queries from ?limit=999999.
+    const rawLimit = limit ? parseInt(limit as string) : NaN;
+    const parsedLimit =
+      !isNaN(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : undefined;
 
     if (search && typeof search === "string") {
       const results = await newsService.searchNews(search, parsedLimit || 50);
@@ -42,7 +45,9 @@ export async function getNews(req: Request, res: Response) {
     console.error("Error fetching news:", error);
     res.status(500).json({
       error: "Failed to fetch news",
-      message: error instanceof Error ? error.message : "Unknown error",
+      ...(process.env.NODE_ENV === "production"
+        ? {}
+        : { message: error instanceof Error ? error.message : "Unknown error" }),
     });
   }
 }
@@ -55,7 +60,9 @@ export async function getCategories(req: Request, res: Response) {
     console.error("Error fetching categories:", error);
     res.status(500).json({
       error: "Failed to fetch categories",
-      message: error instanceof Error ? error.message : "Unknown error",
+      ...(process.env.NODE_ENV === "production"
+        ? {}
+        : { message: error instanceof Error ? error.message : "Unknown error" }),
     });
   }
 }

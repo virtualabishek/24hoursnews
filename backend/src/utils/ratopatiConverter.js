@@ -1,4 +1,6 @@
-import { bsToAd } from "@sbmdkl/nepali-date-converter";
+import NepaliDateConverter from "nepali-date-converter";
+
+const NepaliDate = NepaliDateConverter.default || NepaliDateConverter;
 
 const nepaliMonthMap = {
   वैशाख: 1,
@@ -34,14 +36,24 @@ export function parseRatopatiDate(dateString) {
     // Regex for Ratopati format: "DayName, Day Month Year, HH : MM"
     const regex =
       /^([^\s,]+),\s*([\p{Nd}]+)\s+([^\s]+)\s+([\p{Nd}]+),\s*([\p{Nd}]{2})\s*:\s*([\p{Nd}]{2})$/u;
+    // Alt format seen on listing pages: "Year Month Day गते HH : MM"
+    // e.g. "२०८३ भदौ २५ गते ९:४०"
+    const altRegex =
+      /^([\p{Nd}]+)\s+([^\s]+)\s+([\p{Nd}]+)\s+गते\s+([\p{Nd}]{1,2})\s*:\s*([\p{Nd}]{2})$/u;
     const match = cleanedDateString.match(regex);
+    const altMatch = match ? null : cleanedDateString.match(altRegex);
 
-    if (!match) {
+    if (!match && !altMatch) {
       console.warn(`Invalid date format (regex failed): ${dateString}`);
       return null;
     }
 
-    const [, dayName, dayStr, monthName, yearStr, hoursStr, minutesStr] = match;
+    let dayStr, monthName, yearStr, hoursStr, minutesStr;
+    if (match) {
+      [, , dayStr, monthName, yearStr, hoursStr, minutesStr] = match;
+    } else {
+      [, yearStr, monthName, dayStr, hoursStr, minutesStr] = altMatch;
+    }
 
     // Normalize digits to ASCII for parseInt
     const normalizedYear = normalizeNepaliDigits(yearStr);
@@ -60,12 +72,8 @@ export function parseRatopatiDate(dateString) {
       return null;
     }
 
-    const bsDateStr = `${bsYear}-${String(bsMonth).padStart(2, "0")}-${String(
-      bsDay
-    ).padStart(2, "0")}`;
-
-    const adDateStr = bsToAd(bsDateStr);
-    const adDate = new Date(adDateStr);
+    const nepaliDate = new NepaliDate(bsYear, bsMonth - 1, bsDay);
+    const adDate = nepaliDate.toJsDate();
 
     const hours = parseInt(normalizedHours, 10) || 0;
     const minutes = parseInt(normalizedMinutes, 10) || 0;

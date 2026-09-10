@@ -1,6 +1,6 @@
-import { PrismaClient } from "../lib/generated/prisma/index";
-// Initialize the Prisma Client
-const prisma = new PrismaClient();
+import "dotenv/config";
+import { db } from "./index.js";
+import { publishers } from "./schema.js";
 
 const publisherData = [
   {
@@ -43,15 +43,11 @@ async function main() {
   console.log(`Start seeding ...`);
 
   for (const p of publisherData) {
-    const publisher = await prisma.publisher.upsert({
-      where: { name: p.name },
-      update: {},
-      create: {
-        name: p.name,
-        logoUrl: p.logoUrl,
-      },
-    });
-    console.log(`Created or found publisher: ${publisher.name}`);
+    await db
+      .insert(publishers)
+      .values({ name: p.name, logoUrl: p.logoUrl })
+      .onDuplicateKeyUpdate({ set: { logoUrl: p.logoUrl } });
+    console.log(`Created or found publisher: ${p.name}`);
   }
 
   console.log(`Seeding finished.`);
@@ -62,6 +58,6 @@ main()
     console.error(e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
+  .then(async () => {
+    process.exit(0);
   });

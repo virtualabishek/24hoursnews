@@ -1,5 +1,12 @@
-import prisma from "../lib/prisma.js";
-import { Category, Prisma } from "../../lib/generated/prisma/client.js";
+import { and, asc, desc, eq, like, or, type SQL } from "drizzle-orm";
+import { db } from "../db/index.js";
+import {
+  Category,
+  categoryValues,
+  news,
+  publishers,
+  type NewsWithPublisher,
+} from "../db/schema.js";
 
 interface FetchNewsFilters {
   category?: string | undefined;
@@ -8,79 +15,117 @@ interface FetchNewsFilters {
   limit?: number;
 }
 
-type NewsWithPublisher = Prisma.NewsGetPayload<{
-  include: { publisher: true };
-}>;
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (m) => `\\${m}`);
+}
 
-function formatArticleForFrontend(news: NewsWithPublisher) {
+function likePattern(term: string): string {
+  return `%${escapeLike(term)}%`;
+}
+
+function toCategory(value: string | undefined) {
+  if (!value) return undefined;
+  const upper = value.toUpperCase();
+  return (categoryValues as readonly string[]).includes(upper)
+    ? (upper as (typeof categoryValues)[number])
+    : undefined;
+}
+
+function formatArticleForFrontend(item: NewsWithPublisher) {
   return {
-    id: news.id,
-    engHeading: news.englishTitle || news.nepaliTitle,
-    nepaliHeading: news.nepaliTitle,
-    dateEnglish: news.dateEnglish,
-    dateNepali: news.dateNepali,
-    time: news.time,
-    url: news.url,
-    image_url: news.imageUrl,
-    publisher: news.publisher.name,
-    category: news.category || Category.GENERAL,
+    id: item.id,
+    engHeading: item.englishTitle || item.nepaliTitle,
+    nepaliHeading: item.nepaliTitle,
+    dateEnglish: item.dateEnglish,
+    dateNepali: item.dateNepali,
+    time: item.time,
+    url: item.url,
+    image_url: item.imageUrl,
+    publisher: item.publisher.name,
+    publisherLogo: item.publisher.logoUrl || null,
+    category: item.category || Category.GENERAL,
     engDescription:
-      news.englishDescription ||
-      news.nepaliDescription ||
+      item.englishDescription ||
+      item.nepaliDescription ||
       "No description available.",
     nepaliDescription:
-      news.nepaliDescription || news.englishDescription || "विवरण उपलब्ध छैन।",
-    publishedAt: news.publishedAt?.toISOString() || new Date().toISOString(),
+      item.nepaliDescription || item.englishDescription || "विवरण उपलब्ध छैन।",
+    publishedAt: item.publishedAt?.toISOString() || new Date().toISOString(),
   };
 }
 
-export async function fetchNews(filters: FetchNewsFilters) {
+type ArticleRow = ReturnType<typeof formatArticleForFrontend>;
+
+async function findManyWithPublisher(options: {
+  where?: SQL | undefined;
+  limit?: number;
+}): Promise<NewsWithPublisher[]> {
+  const rows = await db
+    .select({ news, publisher: publishers })
+    .from(news)
+    .leftJoin(publishers, eq(news.publisherId, publishers.id))
+    .where(options.where)
+    .orderBy(desc(news.publishedAt))
+    .limit(options.limit ?? 100);
+
+  return rows.flatMap((row) =>
+    row.publisher ? [{ ...row.news, publisher: row.publisher }] : [],
+  );
+}
+
+export async function fetchNews(
+  filters: FetchNewsFilters,
+): Promise<ArticleRow[]> {
   const { category, publisherName, searchQuery, limit } = filters;
 
   if (searchQuery) {
     const searchTerm = searchQuery.trim();
 
     const categoryMatch = Object.values(Category).find((cat) =>
-      cat.toLowerCase().includes(searchTerm.toLowerCase())
+      cat.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
-    const where: Prisma.NewsWhereInput = {
-      OR: [
-        { nepaliTitle: { contains: searchTerm } },
-        { englishTitle: { contains: searchTerm } },
-        { nepaliDescription: { contains: searchTerm } },
-        { englishDescription: { contains: searchTerm } },
-        { publisher: { name: { contains: searchTerm } } },
-      ],
-    };
-    if (categoryMatch) {
-      where.OR?.push({ category: categoryMatch });
-    }
+    const pattern = likePattern(searchTerm);
+    const searchOr = or(
+      like(news.nepaliTitle, pattern),
+      like(news.englishTitle, pattern),
+      like(news.nepaliDescription, pattern),
+      like(news.englishDescription, pattern),
+      like(publishers.name, pattern),
+      categoryMatch ? eq(news.category, categoryMatch) : undefined,
+    );
 
-    if (category && category.toUpperCase() in Category) {
-      where.category = category.toUpperCase() as Category;
-    }
+    const categoryFilter = toCategory(category);
+    const publisherFilter = publisherName?.trim()
+      ? like(publishers.name, likePattern(publisherName.trim()))
+      : undefined;
 
-    const news = await prisma.news.findMany({
+    const where = and(searchOr, categoryFilter ? eq(news.category, categoryFilter) : undefined, publisherFilter);
+
+    const items = await findManyWithPublisher({
       where,
-      orderBy: { publishedAt: "desc" },
-      include: { publisher: true },
-      take: limit || 100,
+      limit: limit || 100,
     });
-    return news.map(formatArticleForFrontend);
+    return items.map(formatArticleForFrontend);
   }
 
-  if (category) {
-    const whereClause: Prisma.NewsWhereInput = {
-      category: category.toUpperCase() as Category,
-    };
-    const news = await prisma.news.findMany({
-      where: whereClause,
-      orderBy: { publishedAt: "desc" },
-      include: { publisher: true },
-      take: limit || 200,
+  if (category || publisherName) {
+    const categoryFilter = toCategory(category);
+    // Preserve old behavior: unknown category string passes through as-is
+    // would match nothing; keep that by using raw value cast.
+    const effectiveCategory = categoryFilter ?? (category ? (category.toUpperCase() as (typeof categoryValues)[number]) : undefined);
+    const publisherFilter = publisherName?.trim()
+      ? like(publishers.name, likePattern(publisherName.trim()))
+      : undefined;
+
+    const items = await findManyWithPublisher({
+      where: and(
+        effectiveCategory ? eq(news.category, effectiveCategory) : undefined,
+        publisherFilter,
+      ),
+      limit: limit || 200,
     });
-    return news.map(formatArticleForFrontend);
+    return items.map(formatArticleForFrontend);
   }
 
   console.log("Fetching top articles for each category for the homepage...");
@@ -89,31 +134,28 @@ export async function fetchNews(filters: FetchNewsFilters) {
   let allCategorizedNews: NewsWithPublisher[] = [];
 
   for (const cat of categories) {
-    const newsInCategory = await prisma.news.findMany({
-      where: { category: cat },
-      orderBy: { publishedAt: "desc" },
-      include: { publisher: true },
-      take: articlesPerCategory,
+    const newsInCategory = await findManyWithPublisher({
+      where: eq(news.category, cat),
+      limit: articlesPerCategory,
     });
     allCategorizedNews.push(...newsInCategory);
   }
   allCategorizedNews.sort(
-    (a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0)
+    (a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0),
   );
 
   return allCategorizedNews.map(formatArticleForFrontend);
 }
-export async function fetchAvailableCategories() {
-  const newsWithCategories = await prisma.news.findMany({
-    distinct: ["category"],
-    select: { category: true },
-    where: { category: { notIn: [] } },
-    orderBy: { category: "asc" },
-  });
 
-  const categories = newsWithCategories
-    .map((item: { category: Category | null }) => item.category)
-    .filter((c: Category | null): c is Category => c !== null);
+export async function fetchAvailableCategories() {
+  const rows = await db
+    .selectDistinct({ category: news.category })
+    .from(news)
+    .orderBy(asc(news.category));
+
+  const categories = rows
+    .map((item) => item.category)
+    .filter((c): c is (typeof categoryValues)[number] => c !== null);
 
   return categories.length > 0 ? categories : [Category.GENERAL];
 }

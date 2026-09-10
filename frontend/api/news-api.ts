@@ -1,6 +1,21 @@
 import { ApiArticle } from "@/lib/types";
 
-const API_BASE_URL = "https://newsapi.bhagawatin.com.np";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+  (process.env.NODE_ENV === "production"
+    ? "https://newsapi.bhagawatin.com.np"
+    : "http://localhost:3001");
+
+// Shared secret with the backend (must match backend API_KEY).
+// Ships in browser JS, so it stops hotlinking/casual abuse — not targeted extraction.
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
+
+function apiHeaders(): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+  };
+}
 
 interface FetchFilters {
   category?: string;
@@ -40,7 +55,7 @@ export async function fetchNews(
   try {
     const response = await fetch(url, {
       cache: "no-store",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders(),
     });
 
     if (!response.ok) {
@@ -90,7 +105,7 @@ export async function getAvailableCategories(): Promise<string[]> {
   try {
     const response = await fetch(url, {
       cache: "no-store",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders(),
     });
 
     if (!response.ok) {

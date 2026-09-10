@@ -1,26 +1,47 @@
+import { and, eq, lt, sql } from "drizzle-orm";
 import type { RawScrapedArticle } from "../@types/scrapper.type.js";
-import type { Category, Publisher } from "../../lib/generated/prisma/client.js";
-import prisma from "../lib/prisma.js";
+import { db } from "../db/index.js";
+import {
+  news,
+  publishers,
+  type Category,
+  type NewNews,
+  type Publisher,
+} from "../db/schema.js";
 import { SCRAPPER_JOBS } from "../scrappers/scrappers.config.js";
 import { adToNepaliDateString } from "../utils/adToNepaliConverter.js";
 
 export class ScrappingService {
+  // Serializes DB write transactions across concurrently scraped categories.
+  // Parallel DELETE+INSERT batches on the same table deadlock under InnoDB
+  // gap locks (esp. on remote DBs with higher latency); scraping itself stays
+  // parallel — only the write is queued.
+  private writeQueue: Promise<void> = Promise.resolve();
+
+  private enqueueWrite<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.writeQueue.then(fn, fn);
+    this.writeQueue = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }
   public async runAllScraps() {
     console.log("=====Running the scraps:=====");
     for (const job of SCRAPPER_JOBS) {
       console.log(`\n--- Processing Publisher: ${job.publisherName} ---`);
-      const publisher = await prisma.publisher.findUnique({
-        where: { name: job.publisherName },
+      const publisher = await db.query.publishers.findFirst({
+        where: eq(publishers.name, job.publisherName),
       });
 
       if (!publisher) {
         console.error(
-          `Publisher "${job.publisherName}" not found. Please seed the database.`
+          `Publisher "${job.publisherName}" not found. Please seed the database.`,
         );
         continue;
       }
       const categoryPromises = job.targets.map((target) =>
-        this.scrapeAndProcessCategory(job, target, publisher)
+        this.scrapeAndProcessCategory(job, target, publisher),
       );
       await Promise.all(categoryPromises);
     }
@@ -29,7 +50,7 @@ export class ScrappingService {
   private async scrapeAndProcessCategory(
     job: any,
     target: any,
-    publisher: Publisher
+    publisher: Publisher,
   ) {
     const { scraper, dateParser } = job;
     const { category, url } = target;
@@ -47,7 +68,7 @@ export class ScrappingService {
       category,
       publisher.id,
       dateParser,
-      publisher.name === "BBC Nepali"
+      publisher.name === "BBC Nepali",
     );
 
     if (newNewsData.length > 0) {
@@ -60,14 +81,14 @@ export class ScrappingService {
     category: Category,
     publisherId: string,
     dateParser: (dateString: string | undefined) => Date | null,
-    isBBC: boolean = false
-  ) {
+    isBBC: boolean = false,
+  ): NewNews[] {
     return articles
       .map((article, index) => {
         let publishedAt = dateParser(article.nepaliDateString);
         if (!publishedAt) {
           console.warn(
-            `Could not parse date "${article.nepaliDateString}" for article: ${article.title}`
+            `Could not parse date "${article.nepaliDateString}" for article: ${article.title}`,
           );
           return null;
         }
@@ -86,7 +107,7 @@ export class ScrappingService {
             hoursDistribution[hourIndex] ?? 8,
             minutesOffset,
             0,
-            0
+            0,
           );
         }
 
@@ -95,7 +116,7 @@ export class ScrappingService {
           ? nepaliDateFull.split(" गते")[0]
           : "अज्ञात मिति";
 
-        return {
+        const item: NewNews = {
           nepaliTitle: article.title,
           nepaliDescription: article.description,
           url: article.link,
@@ -111,36 +132,71 @@ export class ScrappingService {
           }),
           dateNepali: dateNepaliPart,
         };
+        return item;
       })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
+      .filter((item): item is NewNews => item !== null);
   }
 
   private async replaceNewsInCategory(
     category: Category,
-    newsData: any[],
-    publisherId: string
+    newsData: NewNews[],
+    publisherId: string,
   ) {
-    try {
-      const daysToKeep = 7;
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+    const daysToKeep = 7;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
-      await prisma.$transaction([
-        prisma.news.deleteMany({
-          where: {
-            publisherId,
-            category,
-            publishedAt: { lt: cutoffDate },
-          },
-        }),
-        prisma.news.createMany({ data: newsData, skipDuplicates: true }),
-      ]);
+    // Retry on InnoDB deadlock (ER_LOCK_DEADLOCK 1213) as a backstop.
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await this.enqueueWrite(() =>
+          db.transaction(async (tx) => {
+            await tx
+              .delete(news)
+              .where(
+                and(
+                  eq(news.publisherId, publisherId),
+                  eq(news.category, category),
+                  lt(news.publishedAt, cutoffDate),
+                ),
+              );
+            if (newsData.length > 0) {
+              // No-op update on conflict — Drizzle equivalent of
+              // Prisma createMany(skipDuplicates: true) on `url` unique key.
+              await tx
+                .insert(news)
+                .values(newsData)
+                .onDuplicateKeyUpdate({ set: { url: sql`url` } });
+            }
+          }),
+        );
 
-      console.log(
-        `Cleaned up old articles and added ${newsData.length} new articles for ${category}.`
-      );
-    } catch (error) {
-      console.error(`Transaction failed for category ${category}:`, error);
+        console.log(
+          `Cleaned up old articles and added ${newsData.length} new articles for ${category}.`,
+        );
+        return;
+      } catch (error) {
+        if (isDeadlock(error) && attempt < 3) {
+          console.warn(
+            `Deadlock writing ${category}, retrying (${attempt}/3)...`,
+          );
+          await new Promise((r) => setTimeout(r, 300 * attempt));
+          continue;
+        }
+        console.error(`Transaction failed for category ${category}:`, error);
+        return;
+      }
     }
   }
+}
+
+function isDeadlock(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const err = error as { errno?: unknown; code?: unknown; message?: unknown };
+  if (err.errno === 1213 || err.code === "ER_LOCK_DEADLOCK") return true;
+  const cause = (error as { cause?: unknown }).cause;
+  if (cause && cause !== error) return isDeadlock(cause);
+  return (
+    typeof err.message === "string" && err.message.includes("Deadlock found")
+  );
 }

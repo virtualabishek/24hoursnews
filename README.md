@@ -150,7 +150,6 @@ Create a `.env` file in the `backend/` directory:
 ```env
 # Database
 DATABASE_URL="mysql://user:password@host:3306/24hoursnews"
-SHADOW_DATABASE_URL="mysql://user:password@host:3306/24hoursnews_shadow"
 
 # App
 NODE_ENV="development"
